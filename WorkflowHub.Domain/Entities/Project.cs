@@ -8,8 +8,10 @@ public class Project
 
     public string Description { get; set; } = string.Empty;
 
-    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+    public DateTime CreatedAt { get; set; }
 
-    // Navigation
+    public Guid OwnerId { get; set; }
+    public User Owner { get; set; } = null!;
+
     public ICollection<TaskItem> Tasks { get; set; } = new List<TaskItem>();
 }
