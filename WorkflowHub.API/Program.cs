@@ -1,3 +1,5 @@
+using WorkflowHub.Domain.Entities;
+using WorkflowHub.Domain.Constants;
 using Microsoft.EntityFrameworkCore;
 using WorkflowHub.Infrastructure.Data;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -89,6 +91,30 @@ builder.Services.AddSwaggerGen(options =>
 });
 
 var app = builder.Build();
+
+// Admin seeding
+using (var scope = app.Services.CreateScope())
+{
+    var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+
+    var adminEmail = "admin@test.com";
+
+    var existingAdmin = await db.Users.FirstOrDefaultAsync(u => u.Email == adminEmail);
+
+    if (existingAdmin == null)
+    {
+        db.Users.Add(new User
+        {
+            Id = Guid.NewGuid(),
+            Username = "admin",
+            Email = adminEmail,
+            PasswordHash = BCrypt.Net.BCrypt.HashPassword("Admin123"),
+            Role = Roles.Admin
+        });
+
+        await db.SaveChangesAsync();
+    }
+}
 
 // --------------------
 // PIPELINE ORDER
