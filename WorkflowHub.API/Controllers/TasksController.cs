@@ -6,6 +6,10 @@ using WorkflowHub.Infrastructure.Data;
 using WorkflowHub.Domain.Entities;
 using WorkflowHub.API.DTOs;
 using WorkflowHub.Domain.Constants;
+using WorkflowHub.Domain.Enums;
+using WorkflowHub.Application.Services;
+
+using TaskStatus = WorkflowHub.Domain.Enums.TaskStatus;
 
 namespace WorkflowHub.API.Controllers;
 
@@ -57,7 +61,8 @@ public class TasksController : ControllerBase
             Description = request.Description,
             DueDate = request.DueDate,
             ProjectId = request.ProjectId,
-            AssignedUserId = request.AssignedUserId
+            AssignedUserId = request.AssignedUserId,
+            Status = TaskStatus.ToDo
         };
 
         _context.Tasks.Add(task);
@@ -70,7 +75,8 @@ public class TasksController : ControllerBase
             Description = task.Description,
             DueDate = task.DueDate,
             ProjectId = task.ProjectId,
-            AssignedUserId = task.AssignedUserId
+            AssignedUserId = task.AssignedUserId,
+            Status = task.Status
         };
 
         return Ok(result);
@@ -100,7 +106,8 @@ public class TasksController : ControllerBase
                 Description = t.Description,
                 DueDate = t.DueDate,
                 ProjectId = t.ProjectId,
-                AssignedUserId = t.AssignedUserId
+                AssignedUserId = t.AssignedUserId,
+                Status = t.Status
             })
             .ToListAsync();
 
@@ -119,7 +126,8 @@ public class TasksController : ControllerBase
                 Description = t.Description,
                 DueDate = t.DueDate,
                 ProjectId = t.ProjectId,
-                AssignedUserId = t.AssignedUserId
+                AssignedUserId = t.AssignedUserId,
+                Status = t.Status
             })
             .ToListAsync();
 
@@ -138,10 +146,56 @@ public class TasksController : ControllerBase
                 Description = t.Description,
                 DueDate = t.DueDate,
                 ProjectId = t.ProjectId,
-                AssignedUserId = t.AssignedUserId
+                AssignedUserId = t.AssignedUserId,
+                Status = t.Status
             })
             .ToListAsync();
 
         return Ok(tasks);
+    }
+
+    [HttpPut("{id}/status")]
+    [Authorize]
+    public async Task<IActionResult> UpdateStatus(Guid id, TaskStatus status)
+    {
+        var task = await _context.Tasks.FindAsync(id);
+
+        if (task == null)
+            return NotFound();
+
+        var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        var role = User.FindFirst(ClaimTypes.Role)?.Value;
+
+        if (userId == null || role == null)
+            return Unauthorized();
+
+        if (role == Roles.Employee &&
+            task.AssignedUserId?.ToString() != userId)
+        {
+            return Forbid();
+        }
+
+        try
+        {
+            TaskWorkflowService.EnforceTransition(task.Status, status, role);
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(ex.Message);
+        }
+
+        task.Status = status;
+
+        await _context.SaveChangesAsync();
+
+        return Ok(new TaskDto
+        {
+            Id = task.Id,
+            Title = task.Title,
+            Description = task.Description,
+            DueDate = task.DueDate,
+            ProjectId = task.ProjectId,
+            AssignedUserId = task.AssignedUserId
+        });
     }
 }

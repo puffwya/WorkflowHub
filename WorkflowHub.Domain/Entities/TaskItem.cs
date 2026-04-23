@@ -1,4 +1,5 @@
 namespace WorkflowHub.Domain.Entities;
+using WorkflowHub.Domain.Enums;
 
 public class TaskItem
 {
@@ -9,6 +10,8 @@ public class TaskItem
     public string Description { get; set; } = string.Empty;
 
     public DateTime DueDate { get; set; }
+
+    public TaskStatus Status { get; set; } = TaskStatus.ToDo;
 
     // Foreign Keys
     public Guid ProjectId { get; set; }

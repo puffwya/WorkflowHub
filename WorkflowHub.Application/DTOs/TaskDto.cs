@@ -1,3 +1,6 @@
+using WorkflowHub.Domain.Enums;
+using TaskStatus = WorkflowHub.Domain.Enums.TaskStatus;
+
 public class TaskDto
 {
     public Guid Id { get; set; }
@@ -7,4 +10,6 @@ public class TaskDto
 
     public Guid ProjectId { get; set; }
     public Guid? AssignedUserId { get; set; }
+
+    public TaskStatus Status { get; set; }
 }
