@@ -12,4 +12,5 @@ public class TaskDto
     public Guid? AssignedUserId { get; set; }
 
     public TaskStatus Status { get; set; }
+    public string Priority { get; set; } = "";
 }

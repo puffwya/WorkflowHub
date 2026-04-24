@@ -13,6 +13,8 @@ public class TaskItem
 
     public TaskStatus Status { get; set; } = TaskStatus.ToDo;
 
+    public string Priority { get; set; } = "Medium";
+
     // Foreign Keys
     public Guid ProjectId { get; set; }
     public Guid? AssignedUserId { get; set; }

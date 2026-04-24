@@ -65,7 +65,8 @@ public class TasksController : ControllerBase
             DueDate = request.DueDate,
             ProjectId = request.ProjectId,
             AssignedUserId = request.AssignedUserId,
-            Status = TaskStatus.ToDo
+            Status = TaskStatus.ToDo,
+            Priority = request.Priority
         };
 
         _context.Tasks.Add(task);
@@ -79,29 +80,44 @@ public class TasksController : ControllerBase
             DueDate = task.DueDate,
             ProjectId = task.ProjectId,
             AssignedUserId = task.AssignedUserId,
-            Status = task.Status
+            Status = task.Status,
+            Priority = task.Priority
         };
 
         return Ok(result);
     }
 
     [HttpGet]
-    public async Task<IActionResult> GetTasks()
+    public async Task<IActionResult> GetTasks(
+        [FromQuery] TaskStatus? status,
+        [FromQuery] Guid? userId,
+        [FromQuery] string? priority,
+        [FromQuery] string? search,
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 10
+    )
     {
-        var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-        var role = User.FindFirst(ClaimTypes.Role)?.Value;
+        var query = _context.Tasks.AsQueryable();
 
-        if (userId == null)
-            return Unauthorized();
+        if (status.HasValue)
+            query = query.Where(t => t.Status == status.Value);
 
-        IQueryable<TaskItem> query = _context.Tasks;
+        if (userId.HasValue)
+            query = query.Where(t => t.AssignedUserId == userId);
 
-        if (role != Roles.Admin)
+        if (!string.IsNullOrEmpty(priority))
+            query = query.Where(t => t.Priority == priority);
+
+        if (!string.IsNullOrWhiteSpace(search))
         {
-            query = query.Where(t => t.Project.OwnerId == Guid.Parse(userId));
+            query = query.Where(t =>
+                t.Title.Contains(search) ||
+                t.Description.Contains(search));
         }
 
         var tasks = await query
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
             .Select(t => new TaskDto
             {
                 Id = t.Id,
@@ -110,7 +126,8 @@ public class TasksController : ControllerBase
                 DueDate = t.DueDate,
                 ProjectId = t.ProjectId,
                 AssignedUserId = t.AssignedUserId,
-                Status = t.Status
+                Status = t.Status,
+                Priority = t.Priority
             })
             .ToListAsync();
 
@@ -130,7 +147,8 @@ public class TasksController : ControllerBase
                 DueDate = t.DueDate,
                 ProjectId = t.ProjectId,
                 AssignedUserId = t.AssignedUserId,
-                Status = t.Status
+                Status = t.Status,
+                Priority = t.Priority
             })
             .ToListAsync();
 
@@ -150,7 +168,8 @@ public class TasksController : ControllerBase
                 DueDate = t.DueDate,
                 ProjectId = t.ProjectId,
                 AssignedUserId = t.AssignedUserId,
-                Status = t.Status
+                Status = t.Status,
+                Priority = t.Priority
             })
             .ToListAsync();
 
