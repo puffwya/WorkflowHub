@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
 using WorkflowHub.Infrastructure.Data;
+using WorkflowHub.Infrastructure.Services;
 using WorkflowHub.Domain.Entities;
 using WorkflowHub.API.DTOs;
 using WorkflowHub.Domain.Constants;
@@ -19,10 +20,12 @@ namespace WorkflowHub.API.Controllers;
 public class TasksController : ControllerBase
 {
     private readonly AppDbContext _context;
+    private readonly ActivityLogService _activityLogService;
 
-    public TasksController(AppDbContext context)
+    public TasksController(AppDbContext context, ActivityLogService activityLogService)
     {
         _context = context;
+        _activityLogService = activityLogService;
     }
 
     [HttpPost]
@@ -163,6 +166,8 @@ public class TasksController : ControllerBase
         if (task == null)
             return NotFound();
 
+        var oldStatus = task.Status;
+
         var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
         var role = User.FindFirst(ClaimTypes.Role)?.Value;
 
@@ -187,6 +192,13 @@ public class TasksController : ControllerBase
         task.Status = status;
 
         await _context.SaveChangesAsync();
+
+        await _activityLogService.LogAsync(
+            action: "TaskStatusChanged",
+            details: $"Status changed from {oldStatus} to {status}",
+            userId: Guid.Parse(userId),
+            taskId: task.Id
+        );
 
         return Ok(new TaskDto
         {

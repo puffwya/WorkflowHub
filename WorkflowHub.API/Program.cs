@@ -2,6 +2,7 @@ using WorkflowHub.Domain.Entities;
 using WorkflowHub.Domain.Constants;
 using Microsoft.EntityFrameworkCore;
 using WorkflowHub.Infrastructure.Data;
+using WorkflowHub.Infrastructure.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
@@ -61,6 +62,8 @@ builder.Services.AddControllers()
 // SWAGGER
 // --------------------
 builder.Services.AddEndpointsApiExplorer();
+
+builder.Services.AddScoped<ActivityLogService>();
 
 builder.Services.AddSwaggerGen(options =>
 {
