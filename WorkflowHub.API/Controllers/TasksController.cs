@@ -115,6 +115,8 @@ public class TasksController : ControllerBase
                 t.Description.Contains(search));
         }
 
+        var totalCount = await query.CountAsync();
+
         var tasks = await query
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
@@ -131,7 +133,13 @@ public class TasksController : ControllerBase
             })
             .ToListAsync();
 
-        return Ok(tasks);
+        return Ok(new
+        {
+            items = tasks,
+            totalCount,
+            page,
+            pageSize
+        });
     }
 
     [HttpGet("user/{userId}")]

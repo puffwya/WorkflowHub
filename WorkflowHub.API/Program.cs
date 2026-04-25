@@ -10,6 +10,15 @@ using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowFrontend", 
+        policy => policy  
+            .AllowAnyOrigin()
+            .AllowAnyHeader()
+            .AllowAnyMethod());
+});
+
 // --------------------
 // DB
 // --------------------
@@ -122,6 +131,8 @@ using (var scope = app.Services.CreateScope())
 // --------------------
 // PIPELINE ORDER
 // --------------------
+app.UseCors("AllowFrontend");
+
 app.UseHttpsRedirection();
 
 app.UseAuthentication();
