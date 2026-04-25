@@ -11,6 +11,7 @@ namespace WorkflowHub.API.Controllers;
 
 [ApiController]
 [Route("api/tasks/{taskId}/comments")]
+[Authorize]
 public class CommentsController : ControllerBase
 {
     private readonly AppDbContext _context;
@@ -24,9 +25,12 @@ public class CommentsController : ControllerBase
 
     // GET comments for a task
     [HttpGet]
-    [Authorize]
     public async Task<IActionResult> GetComments(Guid taskId)
     {
+        var taskExists = await _context.Tasks.AnyAsync(t => t.Id == taskId);
+        if (!taskExists)
+            return NotFound("Task not found");
+
         var comments = await _context.Comments
             .Where(c => c.TaskId == taskId)
             .OrderByDescending(c => c.CreatedAt)
@@ -44,7 +48,6 @@ public class CommentsController : ControllerBase
 
     // POST comment
     [HttpPost]
-    [Authorize]
     public async Task<IActionResult> AddComment(Guid taskId, CreateCommentRequest request)
     {
         var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
@@ -61,7 +64,8 @@ public class CommentsController : ControllerBase
             Id = Guid.NewGuid(),
             Content = request.Content,
             TaskId = taskId,
-            UserId = Guid.Parse(userId)
+            UserId = Guid.Parse(userId),
+            CreatedAt = DateTime.UtcNow
         };
 
         _context.Comments.Add(comment);

@@ -2,7 +2,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using WorkflowHub.Infrastructure.Data;
-using TaskStatus = WorkflowHub.Domain.Enums.TaskStatus;
+using WorkflowHub.Domain.Enums;
 
 namespace WorkflowHub.API.Controllers;
 
@@ -18,7 +18,6 @@ public class DashboardController : ControllerBase
         _context = context;
     }
 
-
     [HttpGet("task-summary")]
     [AllowAnonymous]
     public async Task<IActionResult> GetTaskSummary()
@@ -27,10 +26,10 @@ public class DashboardController : ControllerBase
 
         var result = new
         {
-            todo = tasks.Count(t => t.Status == TaskStatus.ToDo),
-            inProgress = tasks.Count(t => t.Status == TaskStatus.InProgress),
-            review = tasks.Count(t => t.Status == TaskStatus.Review),
-            done = tasks.Count(t => t.Status == TaskStatus.Done)
+            todo = tasks.Count(t => t.Status == WorkflowHub.Domain.Enums.TaskStatus.ToDo),
+            inProgress = tasks.Count(t => t.Status == WorkflowHub.Domain.Enums.TaskStatus.InProgress),
+            review = tasks.Count(t => t.Status == WorkflowHub.Domain.Enums.TaskStatus.Review),
+            done = tasks.Count(t => t.Status == WorkflowHub.Domain.Enums.TaskStatus.Done)
         };
 
         return Ok(result);

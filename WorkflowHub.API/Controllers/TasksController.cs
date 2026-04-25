@@ -185,7 +185,6 @@ public class TasksController : ControllerBase
     }
 
     [HttpPut("{id}/status")]
-    [Authorize]
     public async Task<IActionResult> UpdateStatus(Guid id, TaskStatus status)
     {
         var task = await _context.Tasks.FindAsync(id);
@@ -234,7 +233,9 @@ public class TasksController : ControllerBase
             Description = task.Description,
             DueDate = task.DueDate,
             ProjectId = task.ProjectId,
-            AssignedUserId = task.AssignedUserId
+            AssignedUserId = task.AssignedUserId,
+            Status = task.Status,
+            Priority = task.Priority
         });
     }
 }

@@ -72,10 +72,15 @@ builder.Services.AddControllers()
 // --------------------
 builder.Services.AddEndpointsApiExplorer();
 
-builder.Services.AddScoped<ActivityLogService>();
-
 builder.Services.AddSwaggerGen(options =>
 {
+    options.SwaggerDoc("v1", new OpenApiInfo
+    {
+        Title = "WorkflowHub API",
+        Version = "v1",
+        Description = "Task management system API for WorkflowHub"
+    });
+
     options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
     {
         Name = "Authorization",
