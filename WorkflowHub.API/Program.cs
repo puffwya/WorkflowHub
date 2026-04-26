@@ -68,6 +68,11 @@ builder.Services.AddControllers()
     });
 
 // --------------------
+// SERVICES
+// --------------------
+builder.Services.AddScoped<ActivityLogService>();
+
+// --------------------
 // SWAGGER
 // --------------------
 builder.Services.AddEndpointsApiExplorer();

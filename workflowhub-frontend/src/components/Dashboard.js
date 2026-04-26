@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import API_BASE from "../api";
+import apiClient from "../apiClient";
 
 function Dashboard() {
   const [summary, setSummary] = useState(null);
@@ -8,22 +8,11 @@ function Dashboard() {
   useEffect(() => {
     const fetchSummary = async () => {
       try {
-        const res = await fetch(`${API_BASE}/dashboard/task-summary`, {
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${localStorage.getItem("token")}`
-          }
-        });
-
-        if (!res.ok) {
-          throw new Error(`HTTP error! status: ${res.status}`);
-        }
-
-        const data = await res.json();
-        setSummary(data);
+        const res = await apiClient.get("/dashboard/task-summary");
+        setSummary(res.data);
       } catch (err) {
-        console.error("Dashboard fetch failed:", err);
-        setError("Failed to load dashboard data");
+        console.error(err);
+        setError("Failed to load dashboard");
       }
     };
 

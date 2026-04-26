@@ -1,18 +1,58 @@
 import React from "react";
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
-import Dashboard from "./components/Dashboard";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import LoginPage from "./pages/LoginPage";
+import ProtectedRoute from "./routes/ProtectedRoute";
+
+import MainLayout from "./layout/MainLayout";
+
+import DashboardPage from "./pages/DashboardPage";
+import TasksPage from "./pages/TasksPage";
+import TaskCreatePage from "./pages/TaskCreatePage";
 
 function App() {
   return (
-    <Router>
-      <div style={{ padding: "20px" }}>
-        <h1>WorkflowHub</h1>
+    <BrowserRouter>
+      <Routes>
 
-        <Routes>
-          <Route path="/" element={<Dashboard />} />
-        </Routes>
-      </div>
-    </Router>
+        {/* public route */}
+        <Route path="/login" element={<LoginPage />} />
+
+        {/* protected app */}
+        <Route path="/" element={<MainLayout />}>
+          
+          <Route index element={<Navigate to="/dashboard" />} />
+
+          <Route
+            path="dashboard"
+            element={
+              <ProtectedRoute>
+                <DashboardPage />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="tasks"
+            element={
+              <ProtectedRoute>
+                <TasksPage />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="tasks/new"
+            element={
+              <ProtectedRoute>
+                <TaskCreatePage />
+              </ProtectedRoute>
+            }
+          />
+
+        </Route>
+
+      </Routes>
+    </BrowserRouter>
   );
 }
 
