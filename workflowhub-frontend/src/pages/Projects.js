@@ -1,8 +1,10 @@
 import React, { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import apiClient from "../apiClient";
 
 function Projects() {
   const [projects, setProjects] = useState([]);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchProjects = async () => {
@@ -28,10 +30,12 @@ function Projects() {
           {projects.map((project) => (
             <li
               key={project.id}
+              onClick={() => navigate(`/tasks?projectId=${project.id}`)}
               style={{
+                cursor: "pointer",
                 padding: "10px",
                 border: "1px solid #ccc",
-                borderRadius: "5px"
+                marginBottom: "10px"
               }}
             >
               <strong>{project.name || project.title}</strong>

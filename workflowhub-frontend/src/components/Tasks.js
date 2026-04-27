@@ -1,10 +1,13 @@
 import React, { useEffect, useState, useCallback } from "react";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import apiClient from "../apiClient";
 
 function Tasks() {
   const [tasks, setTasks] = useState([]);
   const [loading, setLoading] = useState(true);
+
+  const [searchParams] = useSearchParams();
+  const projectId = searchParams.get("projectId");
 
   // filters
   const [status, setStatus] = useState("");
@@ -25,6 +28,7 @@ function Tasks() {
           status: status || undefined,
           priority: priority || undefined,
           search: search || undefined,
+          projectId: projectId || undefined,
           page,
           pageSize,
         },
@@ -37,7 +41,7 @@ function Tasks() {
     } finally {
       setLoading(false);
     }
-  }, [status, priority, search, page]);
+  }, [status, priority, search, page, projectId]);
 
   useEffect(() => {
     fetchTasks();
@@ -55,6 +59,20 @@ function Tasks() {
     }
   };
 
+  // update status
+  const updateStatus = async (taskId, newStatus) => {
+    try {
+      await apiClient.put(`/tasks/${taskId}/status`, null, {
+        params: { status: newStatus }
+      });
+
+      fetchTasks(); // refresh list
+    } catch (err) {
+      console.error("Failed to update status", err);
+      alert("Failed to update status");
+    }
+  };
+
   if (loading) return <p>Loading tasks...</p>;
 
   return (
@@ -62,6 +80,12 @@ function Tasks() {
       <h2>Tasks</h2>
 
       <Link to="/tasks/new">+ Create Task</Link>
+
+      {projectId && (
+        <p style={{ marginTop: "10px", color: "#555" }}>
+          Filtering by Project ID: {projectId}
+        </p>
+      )}
 
       {/* Filters */}
       <div style={{ marginBottom: "15px" }}>
@@ -116,7 +140,20 @@ function Tasks() {
           {tasks.map((t) => (
             <tr key={t.id}>
               <td>{t.title}</td>
-              <td>{getStatusLabel(t.status)}</td>
+
+              {/* status dropdown */}
+              <td>
+                <select
+                  value={t.status}
+                  onChange={(e) => updateStatus(t.id, e.target.value)}
+                >
+                  <option value="0">To Do</option>
+                  <option value="1">In Progress</option>
+                  <option value="2">Review</option>
+                  <option value="3">Done</option>
+                </select>
+              </td>
+
               <td>{t.priority}</td>
               <td>{new Date(t.dueDate).toLocaleDateString()}</td>
             </tr>
