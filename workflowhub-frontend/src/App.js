@@ -1,5 +1,6 @@
 import React from "react";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { getUserRole } from "./auth";
 import LoginPage from "./pages/LoginPage";
 import Register from "./pages/Register";
 import ProtectedRoute from "./routes/ProtectedRoute";
@@ -8,8 +9,10 @@ import MainLayout from "./layout/MainLayout";
 
 import DashboardPage from "./pages/DashboardPage";
 import Projects from "./pages/Projects";
+import ProjectDetail from "./components/ProjectDetail";
 import TasksPage from "./pages/TasksPage";
 import TaskCreatePage from "./pages/TaskCreatePage";
+import AdminUsers from "./components/AdminUsers";
 
 function App() {
   return (
@@ -36,6 +39,8 @@ function App() {
 
           <Route path="/projects" element={<Projects />} />
 
+          <Route path="/projects/:id" element={<ProjectDetail />} />
+
           <Route
             path="tasks"
             element={
@@ -51,6 +56,13 @@ function App() {
               <ProtectedRoute>
                 <TaskCreatePage />
               </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/admin/users"
+            element={
+              getUserRole() === "Admin" ? <AdminUsers /> : <Navigate to="/dashboard" />
             }
           />
 

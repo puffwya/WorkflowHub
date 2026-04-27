@@ -26,16 +26,18 @@ function Projects() {
       {projects.length === 0 ? (
         <p>No projects found.</p>
       ) : (
-        <ul>
+        <ul style={{ listStyle: "none", padding: 0 }}>
           {projects.map((project) => (
             <li
               key={project.id}
-              onClick={() => navigate(`/tasks?projectId=${project.id}`)}
+              onClick={() => navigate(`/projects/${project.id}`)}
               style={{
                 cursor: "pointer",
                 padding: "10px",
                 border: "1px solid #ccc",
-                marginBottom: "10px"
+                marginBottom: "10px",
+                borderRadius: "6px",
+                background: "#fafafa"
               }}
             >
               <strong>{project.name || project.title}</strong>

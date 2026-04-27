@@ -200,11 +200,9 @@ public class TasksController : ControllerBase
         if (userId == null || role == null)
             return Unauthorized();
 
-        if (role == Roles.Employee &&
-            task.AssignedUserId?.ToString() != userId)
-        {
+        // Only Admin + Manager can update status
+        if (role == Roles.Employee)
             return Forbid();
-        }
 
         try
         {

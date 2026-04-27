@@ -1,5 +1,6 @@
 import React from "react";
 import { Link, Outlet, useNavigate } from "react-router-dom";
+import { getUserRole } from "../auth";
 
 function MainLayout() {
   const navigate = useNavigate();
@@ -8,6 +9,8 @@ function MainLayout() {
     localStorage.removeItem("token");
     navigate("/login");
   };
+
+  const role = getUserRole();
 
   return (
     <div style={{ display: "flex", minHeight: "100vh" }}>
@@ -50,6 +53,12 @@ function MainLayout() {
             <Link style={{ color: "white" }} to="/tasks/new">
               Create Task
             </Link>
+
+            {role === "Admin" && (
+              <Link style={{ color: "white" }} to="/admin/users">
+                Users (Admin)
+              </Link>
+            )}
           </nav>
         </div>
 

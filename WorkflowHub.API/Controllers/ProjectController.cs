@@ -64,4 +64,16 @@ public class ProjectsController : ControllerBase
 
         return Ok(projects);
     }
+
+    [HttpGet("{id}")]
+    public async Task<IActionResult> GetProjectById(Guid id)
+    {
+        var project = await _context.Projects
+            .FirstOrDefaultAsync(p => p.Id == id);
+
+        if (project == null)
+            return NotFound();
+
+        return Ok(project);
+    }
 }
