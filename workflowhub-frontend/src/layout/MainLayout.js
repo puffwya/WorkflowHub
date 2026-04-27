@@ -39,6 +39,10 @@ function MainLayout() {
               Dashboard
             </Link>
 
+            <Link style={{ color: "white" }} to="/projects">
+              Projects
+            </Link>
+
             <Link style={{ color: "white" }} to="/tasks">
               Tasks
             </Link>
