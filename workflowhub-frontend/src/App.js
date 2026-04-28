@@ -8,7 +8,9 @@ import ProtectedRoute from "./routes/ProtectedRoute";
 import MainLayout from "./layout/MainLayout";
 
 import DashboardPage from "./pages/DashboardPage";
+import ActivityLogs from "./components/ActivityLogs";
 import Projects from "./pages/Projects";
+import ProjectCreate from "./pages/ProjectCreate";
 import ProjectDetail from "./components/ProjectDetail";
 import TasksPage from "./pages/TasksPage";
 import TaskCreatePage from "./pages/TaskCreatePage";
@@ -39,6 +41,8 @@ function App() {
 
           <Route path="/projects" element={<Projects />} />
 
+          <Route path="/projects/new" element={<ProjectCreate />} />
+
           <Route path="/projects/:id" element={<ProjectDetail />} />
 
           <Route
@@ -56,6 +60,17 @@ function App() {
               <ProtectedRoute>
                 <TaskCreatePage />
               </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/activity"
+            element={
+              getUserRole() === "Admin" ? (
+                <ActivityLogs />
+              ) : (
+                <Navigate to="/dashboard" />
+              )
             }
           />
 

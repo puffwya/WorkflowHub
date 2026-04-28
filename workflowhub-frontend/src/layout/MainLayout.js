@@ -59,6 +59,12 @@ function MainLayout() {
                 Users (Admin)
               </Link>
             )}
+
+            {role === "Admin" && (
+              <Link style={{ color: "white" }} to="/activity">
+                Activity Logs
+              </Link>
+            )}
           </nav>
         </div>
 

@@ -23,6 +23,10 @@ function Projects() {
     <div>
       <h2>Projects</h2>
 
+      <button onClick={() => navigate("/projects/new")}>
+        + Create Project
+      </button>
+
       {projects.length === 0 ? (
         <p>No projects found.</p>
       ) : (

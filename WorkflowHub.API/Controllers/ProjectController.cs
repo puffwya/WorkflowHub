@@ -25,9 +25,13 @@ public class ProjectsController : ControllerBase
     public async Task<IActionResult> CreateProject(CreateProjectRequest request)
     {
         var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        var role = User.FindFirst(ClaimTypes.Role)?.Value;
 
         if (userId == null)
             return Unauthorized();
+
+        if (role == Roles.Employee)
+            return Forbid();
 
         var project = new Project
         {
