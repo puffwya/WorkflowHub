@@ -1,153 +1,187 @@
 import React, { useEffect, useState } from "react";
-import { useParams, Link } from "react-router-dom";
+import { useParams } from "react-router-dom";
 import apiClient from "../apiClient";
-import { getUserRole } from "../auth";
 
 function ProjectDetail() {
   const { id } = useParams();
 
-  const [project, setProject] = useState(null);
   const [tasks, setTasks] = useState([]);
-  const [error, setError] = useState(null);
+  const [users, setUsers] = useState([]);
+  const [assignedUsers, setAssignedUsers] = useState([]);
+  const [selectedUser, setSelectedUser] = useState("");
 
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const projectRes = await apiClient.get(`/projects/${id}`);
-        setProject(projectRes.data);
-
-        const tasksRes = await apiClient.get(`/tasks`, {
-          params: { projectId: id }
-        });
-
-        setTasks(tasksRes.data.items);
-      } catch (err) {
-        console.error("Failed to load project details", err);
-        setError("Failed to load project");
-      }
-    };
-
-    fetchData();
-  }, [id]);
-
-  // Move logic (explicit direction)
-  const moveTask = async (task, direction) => {
-
-    let nextStatus = task.status;
-
-    if (direction === "right" && task.status < 3) {
-      nextStatus = task.status + 1;
+  // -------------------------
+  // Fetch tasks
+  // -------------------------
+  const fetchTasks = async () => {
+    try {
+      const res = await apiClient.get(`/tasks/project/${id}`);
+      setTasks(res.data);
+    } catch (err) {
+      console.error("Failed to fetch tasks", err);
     }
+  };
 
-    if (direction === "left" && task.status > 0) {
-      nextStatus = task.status - 1;
+  // -------------------------
+  // Fetch all users
+  // -------------------------
+  const fetchUsers = async () => {
+    try {
+      const res = await apiClient.get("/users");
+      setUsers(res.data);
+    } catch (err) {
+      console.error("Failed to fetch users", err);
     }
+  };
 
-    // no change → ignore
-    if (nextStatus === task.status) return;
+  // -------------------------
+  // Fetch assigned users
+  // -------------------------
+  const fetchAssignedUsers = async () => {
+    try {
+      const res = await apiClient.get(`/projects/${id}/users`);
+      setAssignedUsers(res.data);
+    } catch (err) {
+      console.error("Failed to fetch assigned users", err);
+    }
+  };
+
+  // -------------------------
+  // Assign user
+  // -------------------------
+  const handleAssign = async () => {
+    if (!selectedUser) {
+      alert("Select a user first");
+      return;
+    }
 
     try {
-      await apiClient.put(`/tasks/${task.id}/status`, null, {
-        params: { status: nextStatus }
-      });
-
-      // refresh tasks
-      const res = await apiClient.get(`/tasks`, {
-        params: { projectId: id }
-      });
-
-      setTasks(res.data.items);
+      await apiClient.post(`/projects/${id}/assign/${selectedUser}`);
+      setSelectedUser("");
+      fetchAssignedUsers(); // refresh list
     } catch (err) {
-      console.error("Failed to update task status", err);
-      alert("Failed to update task");
+      console.error("Failed to assign user", err);
+      alert("Assignment failed");
     }
   };
 
-  const groupTasksByStatus = (tasks) => {
-    return {
-      todo: tasks.filter(t => t.status === 0),
-      inProgress: tasks.filter(t => t.status === 1),
-      review: tasks.filter(t => t.status === 2),
-      done: tasks.filter(t => t.status === 3),
-    };
+  // -------------------------
+  // Move task (status click)
+  // -------------------------
+  const moveTask = async (task) => {
+    const nextStatus = (task.status + 1) % 4;
+
+    try {
+      await apiClient.put(`/tasks/${task.id}/status?status=${nextStatus}`);
+      fetchTasks();
+    } catch (err) {
+      console.error("Failed to update status", err);
+    }
   };
 
-  if (error) return <p>{error}</p>;
-  if (!project) return <p>Loading project...</p>;
+  // -------------------------
+  // Initial load
+  // -------------------------
+  useEffect(() => {
+    fetchTasks();
+    fetchUsers();
+    fetchAssignedUsers();
+  }, [id]);
 
-  const role = getUserRole();
+  // -------------------------
+  // Group tasks (Kanban)
+  // -------------------------
+  const columns = {
+    0: { title: "To Do", items: [] },
+    1: { title: "In Progress", items: [] },
+    2: { title: "Review", items: [] },
+    3: { title: "Done", items: [] },
+  };
 
-  const grouped = groupTasksByStatus(tasks);
-
-  const Column = ({ title, items }) => (
-    <div style={{
-      flex: 1,
-      border: "1px solid #ddd",
-      borderRadius: "8px",
-      padding: "10px",
-      minHeight: "300px",
-      background: "#fafafa"
-    }}>
-      <h3>{title}</h3>
-
-      {items.length === 0 ? (
-        <p style={{ color: "#999" }}>No tasks</p>
-      ) : (
-        items.map(task => (
-          <div
-            key={task.id}
-            style={{
-              padding: "10px",
-              marginBottom: "10px",
-              border: "1px solid #ccc",
-              borderRadius: "6px",
-              background: "white"
-            }}
-          >
-            <strong>{task.title}</strong>
-
-            <p style={{ margin: "5px 0", fontSize: "12px" }}>
-              Priority: {task.priority}
-            </p>
-
-            {/* Controls */}
-            <div style={{ display: "flex", gap: "5px" }}>
-  
-              <button
-                onClick={() => moveTask(task, "left")}
-                disabled={task.status === 0 || role === "Employee"}
-              >
-                ←
-              </button>
-
-              <button
-                onClick={() => moveTask(task, "right")}
-                disabled={task.status === 3 || role === "Employee"}
-              >
-                →
-              </button>
-            </div>
-          </div>
-        ))
-      )}
-    </div>
-  );
+  tasks.forEach((t) => {
+    columns[t.status]?.items.push(t);
+  });
 
   return (
     <div>
-      <h2>{project.name || project.title}</h2>
+      <h2>Project Detail</h2>
 
-      <Link to="/tasks/new">+ Create Task</Link>
+      {/* -------------------------
+          Assign User Section
+      ------------------------- */}
+      <div style={{ marginBottom: "20px" }}>
+        <h3>Assign User</h3>
 
-      <div style={{
-        display: "flex",
-        gap: "10px",
-        marginTop: "20px"
-      }}>
-        <Column title="To Do" items={grouped.todo} />
-        <Column title="In Progress" items={grouped.inProgress} />
-        <Column title="Review" items={grouped.review} />
-        <Column title="Done" items={grouped.done} />
+        <select
+          value={selectedUser}
+          onChange={(e) => setSelectedUser(e.target.value)}
+        >
+          <option value="">Select User</option>
+          {users.map((u) => (
+            <option key={u.id} value={u.id}>
+              {u.username} ({u.role})
+            </option>
+          ))}
+        </select>
+
+        <button onClick={handleAssign} style={{ marginLeft: "10px" }}>
+          Assign
+        </button>
+      </div>
+
+      {/* -------------------------
+          Assigned Users List
+      ------------------------- */}
+      <div style={{ marginBottom: "20px" }}>
+        <h3>Assigned Users</h3>
+
+        {assignedUsers.length === 0 ? (
+          <p>No users assigned</p>
+        ) : (
+          <ul>
+            {assignedUsers.map((u) => (
+              <li key={u.id}>
+                {u.username} ({u.role})
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+
+      {/* -------------------------
+          Kanban Board
+      ------------------------- */}
+      <div style={{ display: "flex", gap: "20px" }}>
+        {Object.entries(columns).map(([key, col]) => (
+          <div
+            key={key}
+            style={{
+              flex: 1,
+              border: "1px solid #ccc",
+              padding: "10px",
+              minHeight: "300px",
+            }}
+          >
+            <h3>{col.title}</h3>
+
+            {col.items.map((task) => (
+              <div
+                key={task.id}
+                onClick={() => moveTask(task)}
+                style={{
+                  border: "1px solid #999",
+                  padding: "8px",
+                  marginBottom: "8px",
+                  cursor: "pointer",
+                  background: "#f9f9f9",
+                }}
+              >
+                <strong>{task.title}</strong>
+                <div>{task.priority}</div>
+              </div>
+            ))}
+          </div>
+        ))}
       </div>
     </div>
   );

@@ -54,16 +54,33 @@ public class ProjectsController : ControllerBase
         var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
         var role = User.FindFirst(ClaimTypes.Role)?.Value;
 
-        if (userId == null)
+        if (userId == null || role == null)
             return Unauthorized();
 
+        var userGuid = Guid.Parse(userId);
+
+        IQueryable<Project> query = _context.Projects;
+
+        // Admin sees everything
         if (role == Roles.Admin)
         {
-            return Ok(await _context.Projects.ToListAsync());
+            // no filter
+        }
+        else
+        {
+            query = query.Where(p =>
+                p.OwnerId == userGuid || // owns project
+                p.ProjectUsers.Any(pu => pu.UserId == userGuid) // assigned to project
+            );
         }
 
-        var projects = await _context.Projects
-            .Where(p => p.OwnerId == Guid.Parse(userId))
+        var projects = await query
+            .Select(p => new
+            {
+                p.Id,
+                p.Name,
+                p.Description
+            })
             .ToListAsync();
 
         return Ok(projects);
@@ -79,5 +96,63 @@ public class ProjectsController : ControllerBase
             return NotFound();
 
         return Ok(project);
+    }
+
+    [HttpGet("{projectId}/users")]
+    public async Task<IActionResult> GetProjectUsers(Guid projectId)
+    {
+        var users = await _context.ProjectUsers
+            .Where(pu => pu.ProjectId == projectId)
+            .Select(pu => new {
+                pu.User.Id,
+                pu.User.Username,
+                pu.User.Role
+            })
+            .ToListAsync();
+
+        return Ok(users);
+    }
+
+    [HttpPost("{projectId}/assign/{userId}")]
+    [Authorize]
+    public async Task<IActionResult> AssignUser(Guid projectId, Guid userId)
+    {
+        var role = User.FindFirst(ClaimTypes.Role)?.Value;
+
+        var project = await _context.Projects
+            .FirstOrDefaultAsync(p => p.Id == projectId);
+
+        if (project == null)
+            return NotFound();
+
+        var userToAssign = await _context.Users
+            .FirstOrDefaultAsync(u => u.Id == userId);
+
+        if (userToAssign == null)
+            return NotFound();
+
+        // Employees cannot assign anyone
+        if (role == Roles.Employee)
+            return Forbid();
+
+        // Managers can only assign employees
+        if (role == Roles.Manager && userToAssign.Role != Roles.Employee)
+            return Forbid();
+
+        var exists = await _context.ProjectUsers
+            .AnyAsync(x => x.ProjectId == projectId && x.UserId == userId);
+
+        if (!exists)
+        {
+            _context.ProjectUsers.Add(new ProjectUser
+            {
+                ProjectId = projectId,
+                UserId = userId
+            });
+
+            await _context.SaveChangesAsync();
+        }
+
+        return Ok();
     }
 }

@@ -14,4 +14,6 @@ public class Project
     public User Owner { get; set; } = null!;
 
     public ICollection<TaskItem> Tasks { get; set; } = new List<TaskItem>();
+
+    public ICollection<ProjectUser> ProjectUsers { get; set; } = new List<ProjectUser>();
 }

@@ -14,10 +14,22 @@ public class AppDbContext : DbContext
     public DbSet<Project> Projects => Set<Project>();
     public DbSet<TaskItem> Tasks => Set<TaskItem>();
     public DbSet<Comment> Comments => Set<Comment>();
+    public DbSet<ProjectUser> ProjectUsers { get; set; }
     public DbSet<ActivityLog> ActivityLogs => Set<ActivityLog>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
-        base.OnModelCreating(modelBuilder);
+        modelBuilder.Entity<ProjectUser>()
+            .HasKey(pu => new { pu.ProjectId, pu.UserId });
+
+        modelBuilder.Entity<ProjectUser>()
+            .HasOne(pu => pu.Project)
+            .WithMany(p => p.ProjectUsers)
+            .HasForeignKey(pu => pu.ProjectId);
+
+        modelBuilder.Entity<ProjectUser>()
+            .HasOne(pu => pu.User)
+            .WithMany(u => u.ProjectUsers)
+            .HasForeignKey(pu => pu.UserId);
     }
 }

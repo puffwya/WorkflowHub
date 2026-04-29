@@ -21,21 +21,27 @@ public class UsersController : ControllerBase
         _context = context;
     }
 
-    // Get all users (Admin only)
+    // Get all users
     [HttpGet]
+    [Authorize]
     public async Task<IActionResult> GetUsers()
     {
         var role = User.FindFirst(ClaimTypes.Role)?.Value;
 
-        if (role != Roles.Admin)
+        if (role == Roles.Employee)
             return Forbid();
 
-        var users = await _context.Users
-            .Select(u => new
-            {
+        var query = _context.Users.AsQueryable();
+
+        if (role == Roles.Manager)
+        {
+            query = query.Where(u => u.Role == Roles.Employee);
+        }
+
+        var users = await query
+            .Select(u => new {
                 u.Id,
                 u.Username,
-                u.Email,
                 u.Role
             })
             .ToListAsync();
