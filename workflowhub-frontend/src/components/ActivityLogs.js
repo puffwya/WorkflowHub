@@ -71,10 +71,7 @@ function ActivityLogs() {
         />
 
         {/* User dropdown */}
-        <select
-          value={userId}
-          onChange={(e) => setUserId(e.target.value)}
-        >
+        <select value={userId} onChange={(e) => setUserId(e.target.value)}>
           <option value="">All Users</option>
           {users.map((u) => (
             <option key={u.id} value={u.id}>
@@ -84,10 +81,7 @@ function ActivityLogs() {
         </select>
 
         {/* Task dropdown */}
-        <select
-          value={taskId}
-          onChange={(e) => setTaskId(e.target.value)}
-        >
+        <select value={taskId} onChange={(e) => setTaskId(e.target.value)}>
           <option value="">All Tasks</option>
           {tasks.map((t) => (
             <option key={t.id} value={t.id}>
@@ -104,7 +98,7 @@ function ActivityLogs() {
             <th>Action</th>
             <th>Details</th>
             <th>User</th>
-            <th>Task</th>
+            <th>Task / Project</th>
             <th>Time</th>
           </tr>
         </thead>
@@ -112,27 +106,29 @@ function ActivityLogs() {
         <tbody>
           {logs.map((log) => (
             <tr key={log.id}>
+              
               <td>{log.action}</td>
               <td>{log.details}</td>
               <td>{log.username || "Unknown"}</td>
 
+              {/* Task / Project navigation */}
               <td>
                 {log.taskId ? (
-                  <button
-                    onClick={() =>
-                      navigate(`/tasks?taskId=${log.taskId}`)
-                    }
-                  >
+                  <button onClick={() => navigate(`/tasks?taskId=${log.taskId}`)}>
                     View Task
+                  </button>
+                ) : log.projectId ? (
+                  <button onClick={() => navigate(`/projects/${log.projectId}`)}>
+                    View Project
                   </button>
                 ) : (
                   "-"
                 )}
               </td>
-
               <td>
                 {new Date(log.createdAt).toLocaleString()}
               </td>
+
             </tr>
           ))}
         </tbody>

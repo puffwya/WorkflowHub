@@ -15,5 +15,7 @@ public class Project
 
     public ICollection<TaskItem> Tasks { get; set; } = new List<TaskItem>();
 
+    public bool IsArchived { get; set; } = false;
+
     public ICollection<ProjectUser> ProjectUsers { get; set; } = new List<ProjectUser>();
 }

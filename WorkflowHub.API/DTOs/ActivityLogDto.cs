@@ -5,6 +5,7 @@ public class ActivityLogDto
     public string Details { get; set; } = "";
     public DateTime CreatedAt { get; set; }
     public string? Username { get; set; }
+    public Guid? ProjectId { get; set; }
 
     public Guid UserId { get; set; }
     public Guid? TaskId { get; set; }

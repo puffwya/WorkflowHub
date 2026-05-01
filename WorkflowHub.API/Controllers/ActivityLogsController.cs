@@ -80,6 +80,7 @@ public class ActivityLogsController : ControllerBase
                 CreatedAt = l.CreatedAt,
                 UserId = l.UserId,
                 TaskId = l.TaskId,
+                ProjectId = l.ProjectId,
 
                 Username = _context.Users
                     .Where(u => u.Id == l.UserId)

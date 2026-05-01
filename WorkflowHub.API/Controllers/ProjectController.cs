@@ -33,16 +33,30 @@ public class ProjectsController : ControllerBase
         if (role == Roles.Employee)
             return Forbid();
 
+        var userGuid = Guid.Parse(userId);
+
         var project = new Project
         {
             Id = Guid.NewGuid(),
             Name = request.Name,
             Description = request.Description,
             CreatedAt = DateTime.UtcNow,
-            OwnerId = Guid.Parse(userId)
+            OwnerId = userGuid
         };
 
         _context.Projects.Add(project);
+
+        _context.ActivityLogs.Add(new ActivityLog
+        {
+            Id = Guid.NewGuid(),
+            Action = "Project Created",
+            Details = $"Project '{project.Name}' created",
+            CreatedAt = DateTime.UtcNow,
+            UserId = userGuid,
+            TaskId = null,
+            ProjectId = project.Id
+        });
+
         await _context.SaveChangesAsync();
 
         return Ok(project);
@@ -59,7 +73,8 @@ public class ProjectsController : ControllerBase
 
         var userGuid = Guid.Parse(userId);
 
-        IQueryable<Project> query = _context.Projects;
+        IQueryable<Project> query = _context.Projects
+            .Where(p => !p.IsArchived);
 
         // Admin sees everything
         if (role == Roles.Admin)
@@ -90,6 +105,7 @@ public class ProjectsController : ControllerBase
     public async Task<IActionResult> GetProjectById(Guid id)
     {
         var project = await _context.Projects
+            .Where(p => !p.IsArchived)
             .FirstOrDefaultAsync(p => p.Id == id);
 
         if (project == null)
@@ -117,6 +133,7 @@ public class ProjectsController : ControllerBase
     [Authorize]
     public async Task<IActionResult> AssignUser(Guid projectId, Guid userId)
     {
+        var currentUserId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
         var role = User.FindFirst(ClaimTypes.Role)?.Value;
 
         var project = await _context.Projects
@@ -135,9 +152,14 @@ public class ProjectsController : ControllerBase
         if (role == Roles.Employee)
             return Forbid();
 
+        if (currentUserId == null || role == null)
+            return Unauthorized();
+
         // Managers can only assign employees
         if (role == Roles.Manager && userToAssign.Role != Roles.Employee)
             return Forbid();
+
+        var currentUserGuid = Guid.Parse(currentUserId);
 
         var exists = await _context.ProjectUsers
             .AnyAsync(x => x.ProjectId == projectId && x.UserId == userId);
@@ -152,6 +174,40 @@ public class ProjectsController : ControllerBase
 
             await _context.SaveChangesAsync();
         }
+
+        _context.ActivityLogs.Add(new ActivityLog
+        {
+            Id = Guid.NewGuid(),
+            Action = "User Assigned",
+            Details = $"User {userToAssign.Username} assigned to project {project.Name}",
+            CreatedAt = DateTime.UtcNow,
+            UserId = currentUserGuid,
+            TaskId = null,
+            ProjectId = project.Id
+        });
+
+        await _context.SaveChangesAsync();
+
+        return Ok();
+    }
+
+    [HttpPut("{id}/archive")]
+    [Authorize]
+    public async Task<IActionResult> ArchiveProject(Guid id)
+    {
+        var role = User.FindFirst(ClaimTypes.Role)?.Value;
+
+        if (role != Roles.Admin)
+            return Forbid();
+
+        var project = await _context.Projects.FindAsync(id);
+
+        if (project == null)
+            return NotFound();
+
+        project.IsArchived = true;
+
+        await _context.SaveChangesAsync();
 
         return Ok();
     }

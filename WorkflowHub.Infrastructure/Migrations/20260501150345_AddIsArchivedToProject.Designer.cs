@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using WorkflowHub.Infrastructure.Data;
 
@@ -10,9 +11,11 @@ using WorkflowHub.Infrastructure.Data;
 namespace WorkflowHub.Infrastructure.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260501150345_AddIsArchivedToProject")]
+    partial class AddIsArchivedToProject
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "9.0.0");
@@ -34,9 +37,6 @@ namespace WorkflowHub.Infrastructure.Migrations
                         .IsRequired()
                         .HasColumnType("TEXT");
 
-                    b.Property<Guid?>("ProjectId")
-                        .HasColumnType("TEXT");
-
                     b.Property<Guid?>("TaskId")
                         .HasColumnType("TEXT");
 
@@ -44,8 +44,6 @@ namespace WorkflowHub.Infrastructure.Migrations
                         .HasColumnType("TEXT");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("ProjectId");
 
                     b.HasIndex("TaskId");
 
@@ -195,10 +193,6 @@ namespace WorkflowHub.Infrastructure.Migrations
 
             modelBuilder.Entity("WorkflowHub.Domain.Entities.ActivityLog", b =>
                 {
-                    b.HasOne("WorkflowHub.Domain.Entities.Project", "Project")
-                        .WithMany()
-                        .HasForeignKey("ProjectId");
-
                     b.HasOne("WorkflowHub.Domain.Entities.TaskItem", "Task")
                         .WithMany()
                         .HasForeignKey("TaskId");
@@ -208,8 +202,6 @@ namespace WorkflowHub.Infrastructure.Migrations
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
-
-                    b.Navigation("Project");
 
                     b.Navigation("Task");
 
