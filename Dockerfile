@@ -5,9 +5,9 @@ WORKDIR /src
 # Copy everything
 COPY . .
 
-# Restore and publish
-RUN dotnet restore WorkflowHub.API.csproj
-RUN dotnet publish WorkflowHub.API.csproj -c Release -o /app/out
+# Restore + publish from API project
+RUN dotnet restore WorkflowHub.API/WorkflowHub.API.csproj
+RUN dotnet publish WorkflowHub.API/WorkflowHub.API.csproj -c Release -o /app/out
 
 # Runtime stage
 FROM mcr.microsoft.com/dotnet/aspnet:9.0
