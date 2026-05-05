@@ -16,6 +16,8 @@ import TasksPage from "./pages/TasksPage";
 import TaskCreatePage from "./pages/TaskCreatePage";
 import AdminUsers from "./components/AdminUsers";
 
+console.log(process.env.REACT_APP_API_URL);
+
 function App() {
   return (
     <Routes>
