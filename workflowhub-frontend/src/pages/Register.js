@@ -8,13 +8,15 @@ function Register() {
   const [form, setForm] = useState({
     username: "",
     email: "",
-    password: ""
+    password: "",
   });
+
+  const [error, setError] = useState("");
 
   const handleChange = (e) => {
     setForm({
       ...form,
-      [e.target.name]: e.target.value
+      [e.target.name]: e.target.value,
     });
   };
 
@@ -24,58 +26,146 @@ function Register() {
     try {
       await apiClient.post("/auth/register", form);
 
-      // after register → go to login
       navigate("/login");
     } catch (err) {
       console.error("Register failed", err);
-      alert("Registration failed");
+      setError("Registration failed");
     }
   };
 
   return (
-    <div style={{ padding: "40px" }}>
-      <h2>Register</h2>
+    <div style={styles.page}>
+      <div style={styles.card}>
+        <h1 style={styles.title}>Create Account</h1>
 
-      <form onSubmit={handleSubmit} style={{ maxWidth: "300px" }}>
-        
-        <div>
+        <p style={styles.subtitle}>
+          Sign up to get started with Wyatt's WorkflowHub
+        </p>
+
+        <form onSubmit={handleSubmit} style={styles.form}>
           <input
             name="username"
+            type="text"
             placeholder="Username"
             value={form.username}
             onChange={handleChange}
+            style={styles.input}
           />
-        </div>
 
-        <div>
           <input
             name="email"
+            type="email"
             placeholder="Email"
             value={form.email}
             onChange={handleChange}
+            style={styles.input}
           />
-        </div>
 
-        <div>
           <input
             type="password"
             name="password"
             placeholder="Password"
             value={form.password}
             onChange={handleChange}
+            style={styles.input}
           />
-        </div>
 
-        <button type="submit" style={{ marginTop: "10px" }}>
-          Register
-        </button>
-      </form>
+          <button type="submit" style={styles.button}>
+            Create Account
+          </button>
+        </form>
 
-      <p style={{ marginTop: "10px" }}>
-        Already have an account? <Link to="/login">Login</Link>
-      </p>
+        {error && <p style={styles.error}>{error}</p>}
+
+        <p style={styles.footerText}>
+          Already have an account?{" "}
+          <Link to="/login" style={styles.link}>
+            Login
+          </Link>
+        </p>
+      </div>
     </div>
   );
 }
+
+const styles = {
+  page: {
+    minHeight: "100vh",
+    display: "flex",
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "#f4f7fb",
+    padding: "20px",
+  },
+
+  card: {
+    width: "100%",
+    maxWidth: "420px",
+    backgroundColor: "#ffffff",
+    padding: "40px",
+    borderRadius: "18px",
+    boxShadow: "0 10px 30px rgba(0, 0, 0, 0.08)",
+  },
+
+  title: {
+    margin: 0,
+    fontSize: "2rem",
+    fontWeight: "700",
+    color: "#111827",
+    marginBottom: "10px",
+  },
+
+  subtitle: {
+    marginTop: 0,
+    marginBottom: "30px",
+    color: "#6b7280",
+    fontSize: "0.95rem",
+  },
+
+  form: {
+    display: "flex",
+    flexDirection: "column",
+    gap: "16px",
+  },
+
+  input: {
+    padding: "14px 16px",
+    borderRadius: "10px",
+    border: "1px solid #d1d5db",
+    fontSize: "1rem",
+    outline: "none",
+  },
+
+  button: {
+    marginTop: "8px",
+    padding: "14px",
+    borderRadius: "10px",
+    border: "none",
+    backgroundColor: "#2563eb",
+    color: "white",
+    fontSize: "1rem",
+    fontWeight: "600",
+    cursor: "pointer",
+  },
+
+  error: {
+    marginTop: "16px",
+    color: "#dc2626",
+    fontSize: "0.9rem",
+  },
+
+  footerText: {
+    marginTop: "24px",
+    textAlign: "center",
+    color: "#6b7280",
+    fontSize: "0.95rem",
+  },
+
+  link: {
+    color: "#2563eb",
+    textDecoration: "none",
+    fontWeight: "600",
+  },
+};
 
 export default Register;

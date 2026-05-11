@@ -19,54 +19,118 @@ function Dashboard() {
     fetchSummary();
   }, []);
 
-  if (error) return <p>{error}</p>;
-  if (!summary) return <p>Loading...</p>;
+  if (error) {
+    return (
+      <div style={styles.page}>
+        <p style={styles.error}>{error}</p>
+      </div>
+    );
+  }
 
-  const cardStyle = {
-    flex: 1,
-    padding: "20px",
-    borderRadius: "10px",
-    background: "#f5f5f5",
-    textAlign: "center",
-    boxShadow: "0 2px 6px rgba(0,0,0,0.1)"
-  };
-
-  const containerStyle = {
-    display: "flex",
-    gap: "20px",
-    flexWrap: "wrap",
-    marginTop: "20px"
-  };
+  if (!summary) {
+    return (
+      <div style={styles.page}>
+        <p style={styles.loading}>Loading dashboard...</p>
+      </div>
+    );
+  }
 
   return (
-    <div style={{ padding: "20px" }}>
-      <h2 style={{ marginBottom: "10px" }}>Dashboard</h2>
+    <div style={styles.page}>
+      {/* Header */}
+      <div style={styles.header}>
+        <h1 style={styles.title}>Dashboard</h1>
+        <p style={styles.subtitle}>
+          Overview of your task workflow
+        </p>
+      </div>
 
-      <h4 style={{ marginBottom: "10px" }}>Tasks</h4>
-
-      <div style={containerStyle}>
-        <div style={cardStyle}>
-          <h1>{summary.todo}</h1>
-          <p>To Do</p>
+      {/* Cards */}
+      <div style={styles.grid}>
+        <div style={styles.card}>
+          <div style={styles.value}>{summary.todo}</div>
+          <div style={styles.label}>To Do</div>
         </div>
 
-        <div style={cardStyle}>
-          <h1>{summary.inProgress}</h1>
-          <p>In Progress</p>
+        <div style={styles.card}>
+          <div style={styles.value}>{summary.inProgress}</div>
+          <div style={styles.label}>In Progress</div>
         </div>
 
-        <div style={cardStyle}>
-          <h1>{summary.review}</h1>
-          <p>Review</p>
+        <div style={styles.card}>
+          <div style={styles.value}>{summary.review}</div>
+          <div style={styles.label}>Review</div>
         </div>
 
-        <div style={cardStyle}>
-          <h1>{summary.done}</h1>
-          <p>Done</p>
+        <div style={styles.card}>
+          <div style={styles.value}>{summary.done}</div>
+          <div style={styles.label}>Done</div>
         </div>
       </div>
     </div>
   );
 }
+
+/* -------------------------
+   STYLES
+------------------------- */
+const styles = {
+  page: {
+    padding: "40px",
+    backgroundColor: "#f4f7fb",
+    minHeight: "100vh",
+  },
+
+  header: {
+    marginBottom: "25px",
+  },
+
+  title: {
+    margin: 0,
+    fontSize: "2.2rem",
+    fontWeight: "700",
+    color: "#111827",
+  },
+
+  subtitle: {
+    marginTop: "6px",
+    color: "#6b7280",
+  },
+
+  grid: {
+    display: "grid",
+    gridTemplateColumns: "repeat(4, 1fr)",
+    gap: "16px",
+  },
+
+  card: {
+    backgroundColor: "white",
+    padding: "22px",
+    borderRadius: "18px",
+    boxShadow: "0 10px 30px rgba(0,0,0,0.06)",
+    textAlign: "center",
+  },
+
+  value: {
+    fontSize: "2rem",
+    fontWeight: "800",
+    color: "#111827",
+  },
+
+  label: {
+    marginTop: "6px",
+    fontSize: "0.95rem",
+    color: "#6b7280",
+    fontWeight: "600",
+  },
+
+  loading: {
+    color: "#6b7280",
+  },
+
+  error: {
+    color: "#dc2626",
+  },
+};
 
 export default Dashboard;
