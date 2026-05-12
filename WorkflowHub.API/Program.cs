@@ -33,8 +33,6 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 // --------------------
 var jwtKey = builder.Configuration["Jwt:Key"];
 
-Console.WriteLine($"JWT KEY: '{builder.Configuration["Jwt:Key"]}'");
-
 if (string.IsNullOrEmpty(jwtKey))
 {
     throw new Exception("JWT Key is missing. Set Jwt:Key in environment variables.");
