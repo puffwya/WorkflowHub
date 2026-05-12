@@ -1,9 +1,12 @@
 import React, { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import apiClient from "../apiClient";
 
 function Dashboard() {
   const [summary, setSummary] = useState(null);
   const [error, setError] = useState(null);
+
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchSummary = async () => {
@@ -18,6 +21,10 @@ function Dashboard() {
 
     fetchSummary();
   }, []);
+
+  const goToTasks = () => {
+    navigate("/tasks");
+  };
 
   if (error) {
     return (
@@ -40,6 +47,7 @@ function Dashboard() {
       {/* Header */}
       <div style={styles.header}>
         <h1 style={styles.title}>Dashboard</h1>
+
         <p style={styles.subtitle}>
           Overview of your task workflow
         </p>
@@ -47,24 +55,56 @@ function Dashboard() {
 
       {/* Cards */}
       <div style={styles.grid}>
-        <div style={styles.card}>
-          <div style={styles.value}>{summary.todo}</div>
-          <div style={styles.label}>To Do</div>
+        <div
+          style={styles.card}
+          onClick={goToTasks}
+        >
+          <div style={styles.value}>
+            {summary.todo}
+          </div>
+
+          <div style={styles.label}>
+            To Do
+          </div>
         </div>
 
-        <div style={styles.card}>
-          <div style={styles.value}>{summary.inProgress}</div>
-          <div style={styles.label}>In Progress</div>
+        <div
+          style={styles.card}
+          onClick={goToTasks}
+        >
+          <div style={styles.value}>
+            {summary.inProgress}
+          </div>
+
+          <div style={styles.label}>
+            In Progress
+          </div>
         </div>
 
-        <div style={styles.card}>
-          <div style={styles.value}>{summary.review}</div>
-          <div style={styles.label}>Review</div>
+        <div
+          style={styles.card}
+          onClick={goToTasks}
+        >
+          <div style={styles.value}>
+            {summary.review}
+          </div>
+
+          <div style={styles.label}>
+            Review
+          </div>
         </div>
 
-        <div style={styles.card}>
-          <div style={styles.value}>{summary.done}</div>
-          <div style={styles.label}>Done</div>
+        <div
+          style={styles.card}
+          onClick={goToTasks}
+        >
+          <div style={styles.value}>
+            {summary.done}
+          </div>
+
+          <div style={styles.label}>
+            Done
+          </div>
         </div>
       </div>
     </div>
@@ -109,6 +149,8 @@ const styles = {
     borderRadius: "18px",
     boxShadow: "0 10px 30px rgba(0,0,0,0.06)",
     textAlign: "center",
+    cursor: "pointer",
+    transition: "all 0.2s ease",
   },
 
   value: {
