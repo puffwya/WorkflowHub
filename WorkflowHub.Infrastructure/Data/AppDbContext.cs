@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using WorkflowHub.Domain.Entities;
+using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 namespace WorkflowHub.Infrastructure.Data;
 
@@ -21,7 +22,6 @@ public class AppDbContext : DbContext
     {
         base.OnModelCreating(modelBuilder);
 
-        // Project <-> User
         modelBuilder.Entity<ProjectUser>()
             .HasKey(pu => new { pu.ProjectId, pu.UserId });
 
@@ -34,15 +34,21 @@ public class AppDbContext : DbContext
             .HasOne(pu => pu.User)
             .WithMany(u => u.ProjectUsers)
             .HasForeignKey(pu => pu.UserId);
-    }
 
-    // GLOBAL DATE TIME UTC ENFORCEMENT
-    protected override void ConfigureConventions(ModelConfigurationBuilder configurationBuilder)
-    {
-        configurationBuilder.Properties<DateTime>()
-            .HaveConversion(
-                v => v.ToUniversalTime(),
-                v => DateTime.SpecifyKind(v, DateTimeKind.Utc)
-            );
+        var utcConverter = new ValueConverter<DateTime, DateTime>(
+            v => v.ToUniversalTime(),
+            v => DateTime.SpecifyKind(v, DateTimeKind.Utc)
+        );
+
+        foreach (var entityType in modelBuilder.Model.GetEntityTypes())
+        {
+            foreach (var property in entityType.GetProperties())
+            {
+                if (property.ClrType == typeof(DateTime))
+                {
+                    property.SetValueConverter(utcConverter);
+                }
+            }
+        }
     }
 }
