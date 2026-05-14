@@ -23,7 +23,7 @@ builder.Services.AddCors(options =>
 // DB
 // --------------------
 builder.Services.AddDbContext<AppDbContext>(options =>
-    options.UseSqlite(
+    options.UseNpgsql(
         builder.Configuration.GetConnectionString("DefaultConnection")
     )
 );
