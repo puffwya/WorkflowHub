@@ -51,7 +51,7 @@ function Projects() {
               style={styles.card}
             >
               <h3 style={styles.projectTitle}>
-                {project.name || project.title}
+                {project.name}
               </h3>
 
               <p style={styles.projectMeta}>

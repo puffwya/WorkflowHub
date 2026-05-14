@@ -13,6 +13,8 @@ function ProjectDetail() {
   const [draggedTask, setDraggedTask] = useState(null);
   const [draggedOverColumn, setDraggedOverColumn] = useState(null);
 
+  const [projectArchived, setProjectArchived] = useState(false);
+
   // -------------------------
   // Fetch tasks
   // -------------------------
@@ -56,10 +58,7 @@ function ProjectDetail() {
     if (!selectedUser) return;
 
     try {
-      await apiClient.post(
-        `/projects/${id}/assign/${selectedUser}`
-      );
-
+      await apiClient.post(`/projects/${id}/assign/${selectedUser}`);
       setSelectedUser("");
       fetchAssignedUsers();
     } catch (err) {
@@ -73,7 +72,6 @@ function ProjectDetail() {
   // -------------------------
   const moveTask = async (taskId, newStatus) => {
     try {
-      // optimistic update
       setTasks((prev) =>
         prev.map((task) =>
           task.id === taskId
@@ -82,12 +80,40 @@ function ProjectDetail() {
         )
       );
 
-      await apiClient.put(
-        `/tasks/${taskId}/status?status=${newStatus}`
-      );
+      await apiClient.put(`/tasks/${taskId}/status?status=${newStatus}`);
     } catch (err) {
       console.error("Failed to update status", err);
       fetchTasks();
+    }
+  };
+
+  // -------------------------
+  // Delete task
+  // -------------------------
+  const handleDeleteTask = async (taskId) => {
+    const backup = [...tasks];
+
+    setTasks((prev) => prev.filter((t) => t.id !== taskId));
+
+    try {
+      await apiClient.delete(`/tasks/${taskId}`);
+    } catch (err) {
+      console.error("Failed to delete task", err);
+      alert("Delete failed");
+      setTasks(backup);
+    }
+  };
+
+  // -------------------------
+  // Archive project
+  // -------------------------
+  const handleArchiveProject = async () => {
+    try {
+      await apiClient.put(`/projects/${id}/archive`);
+      setProjectArchived(true);
+    } catch (err) {
+      console.error("Failed to archive project", err);
+      alert("Archive failed");
     }
   };
 
@@ -120,15 +146,26 @@ function ProjectDetail() {
     <div style={styles.page}>
       {/* Header */}
       <div style={styles.header}>
-        <h1 style={styles.title}>Project Workspace</h1>
-        <p style={styles.subtitle}>
-          Manage tasks, assignments, and workflow
-        </p>
+        <div>
+          <h1 style={styles.title}>Project Workspace</h1>
+          <p style={styles.subtitle}>
+            Manage tasks, assignments, and workflow
+          </p>
+        </div>
+
+        {/* PROJECT ACTIONS */}
+        <div style={styles.projectActions}>
+          <button
+            onClick={handleArchiveProject}
+            style={styles.archiveBtn}
+          >
+            {projectArchived ? "Archived" : "Archive Project"}
+          </button>
+        </div>
       </div>
 
       {/* Top Panels */}
       <div style={styles.topGrid}>
-
         {/* Assign User */}
         <div style={styles.card}>
           <h3 style={styles.sectionTitle}>Assign User</h3>
@@ -148,10 +185,7 @@ function ProjectDetail() {
               ))}
             </select>
 
-            <button
-              onClick={handleAssign}
-              style={styles.button}
-            >
+            <button onClick={handleAssign} style={styles.button}>
               Assign
             </button>
           </div>
@@ -162,16 +196,11 @@ function ProjectDetail() {
           <h3 style={styles.sectionTitle}>Team</h3>
 
           {assignedUsers.length === 0 ? (
-            <p style={styles.mutedText}>
-              No users assigned
-            </p>
+            <p style={styles.mutedText}>No users assigned</p>
           ) : (
             <div style={styles.userList}>
               {assignedUsers.map((u) => (
-                <div
-                  key={u.id}
-                  style={styles.userChip}
-                >
+                <div key={u.id} style={styles.userChip}>
                   {u.username} · {u.role}
                 </div>
               ))}
@@ -189,14 +218,9 @@ function ProjectDetail() {
               e.preventDefault();
               setDraggedOverColumn(key);
             }}
-            onDragLeave={() => {
-              setDraggedOverColumn(null);
-            }}
+            onDragLeave={() => setDraggedOverColumn(null)}
             onDrop={() => {
-              if (draggedTask) {
-                moveTask(draggedTask.id, key);
-              }
-
+              if (draggedTask) moveTask(draggedTask.id, key);
               setDraggedTask(null);
               setDraggedOverColumn(null);
             }}
@@ -209,10 +233,7 @@ function ProjectDetail() {
           >
             <div style={styles.columnHeader}>
               <span>{col.title}</span>
-
-              <span style={styles.count}>
-                {col.items.length}
-              </span>
+              <span style={styles.count}>{col.items.length}</span>
             </div>
 
             <div style={styles.columnBody}>
@@ -221,25 +242,19 @@ function ProjectDetail() {
                   key={task.id}
                   draggable
                   onDragStart={() => setDraggedTask(task)}
-                  onDragEnd={() => {
-                    setDraggedTask(null);
-                    setDraggedOverColumn(null);
-                  }}
-                  style={{
-                    ...styles.taskCard,
-                    ...(draggedTask?.id === task.id
-                      ? styles.draggingCard
-                      : {}),
-                  }}
+                  style={styles.taskCard}
                 >
                   <div style={styles.taskTop}>
                     <div style={styles.taskTitle}>
                       {task.title}
                     </div>
 
-                    <div style={styles.dragHandle}>
-                      ⋮⋮
-                    </div>
+                    <button
+                      onClick={() => handleDeleteTask(task.id)}
+                      style={styles.deleteBtn}
+                    >
+                      ✕
+                    </button>
                   </div>
 
                   <div style={styles.taskMetaRow}>
@@ -268,6 +283,9 @@ const styles = {
   },
 
   header: {
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
     marginBottom: "25px",
   },
 
@@ -275,12 +293,25 @@ const styles = {
     margin: 0,
     fontSize: "2.2rem",
     fontWeight: "700",
-    color: "#111827",
   },
 
   subtitle: {
     marginTop: "8px",
     color: "#6b7280",
+  },
+
+  projectActions: {
+    display: "flex",
+    gap: "10px",
+  },
+
+  archiveBtn: {
+    padding: "10px 14px",
+    borderRadius: "10px",
+    border: "1px solid #d1d5db",
+    backgroundColor: "#fff",
+    cursor: "pointer",
+    fontWeight: "600",
   },
 
   topGrid: {
@@ -294,15 +325,11 @@ const styles = {
     backgroundColor: "white",
     padding: "20px",
     borderRadius: "18px",
-    boxShadow: "0 10px 30px rgba(0,0,0,0.06)",
   },
 
   sectionTitle: {
     marginTop: 0,
     marginBottom: "15px",
-    fontSize: "1.1rem",
-    fontWeight: "700",
-    color: "#111827",
   },
 
   row: {
@@ -313,21 +340,14 @@ const styles = {
   select: {
     flex: 1,
     padding: "12px",
-    borderRadius: "10px",
-    border: "1px solid #d1d5db",
-    fontSize: "0.95rem",
-    outline: "none",
   },
 
   button: {
     padding: "12px 16px",
-    borderRadius: "10px",
-    border: "none",
     backgroundColor: "#2563eb",
     color: "white",
-    fontWeight: "600",
-    cursor: "pointer",
-    transition: "0.2s ease",
+    border: "none",
+    borderRadius: "10px",
   },
 
   mutedText: {
@@ -336,17 +356,14 @@ const styles = {
 
   userList: {
     display: "flex",
-    flexWrap: "wrap",
     gap: "8px",
+    flexWrap: "wrap",
   },
 
   userChip: {
     backgroundColor: "#e0e7ff",
-    color: "#3730a3",
     padding: "6px 10px",
     borderRadius: "999px",
-    fontSize: "0.85rem",
-    fontWeight: "600",
   },
 
   board: {
@@ -357,37 +374,24 @@ const styles = {
 
   column: {
     backgroundColor: "white",
-    borderRadius: "20px",
     padding: "16px",
-    boxShadow: "0 10px 30px rgba(0,0,0,0.06)",
-    minHeight: "450px",
-    transition: "all 0.2s ease",
-    border: "2px solid transparent",
+    borderRadius: "20px",
   },
 
   columnActive: {
     border: "2px dashed #2563eb",
-    backgroundColor: "#eef4ff",
-    transform: "scale(1.01)",
   },
 
   columnHeader: {
-    fontWeight: "700",
-    marginBottom: "14px",
     display: "flex",
     justifyContent: "space-between",
-    alignItems: "center",
-    color: "#111827",
-    fontSize: "1rem",
+    marginBottom: "12px",
   },
 
   count: {
     backgroundColor: "#f3f4f6",
-    color: "#6b7280",
     padding: "4px 10px",
     borderRadius: "999px",
-    fontSize: "0.8rem",
-    fontWeight: "700",
   },
 
   columnBody: {
@@ -397,53 +401,36 @@ const styles = {
   },
 
   taskCard: {
-    backgroundColor: "#ffffff",
     padding: "14px",
-    borderRadius: "14px",
-    cursor: "grab",
     border: "1px solid #e5e7eb",
-    transition: "all 0.18s ease",
-    boxShadow: "0 4px 12px rgba(0,0,0,0.04)",
-  },
-
-  draggingCard: {
-    opacity: 0.45,
-    transform: "rotate(2deg) scale(1.03)",
-    boxShadow: "0 18px 35px rgba(37,99,235,0.18)",
+    borderRadius: "14px",
+    backgroundColor: "#fff",
   },
 
   taskTop: {
     display: "flex",
     justifyContent: "space-between",
-    alignItems: "flex-start",
-    gap: "10px",
-  },
-
-  dragHandle: {
-    color: "#9ca3af",
-    fontSize: "0.9rem",
-    userSelect: "none",
   },
 
   taskTitle: {
     fontWeight: "700",
-    color: "#111827",
-    lineHeight: "1.4",
+  },
+
+  deleteBtn: {
+    background: "none",
+    border: "none",
+    color: "#ef4444",
+    cursor: "pointer",
   },
 
   taskMetaRow: {
-    marginTop: "12px",
-    display: "flex",
-    justifyContent: "flex-start",
+    marginTop: "10px",
   },
 
   priorityBadge: {
     backgroundColor: "#f3f4f6",
-    color: "#374151",
     padding: "6px 10px",
     borderRadius: "999px",
-    fontSize: "0.78rem",
-    fontWeight: "700",
   },
 };
 
