@@ -1,9 +1,9 @@
 # WorkflowHub
 
-WorkflowHub is a full-stack SaaS-style project management system for managing projects, tasks, users, and 
-activity tracking with role-based access control.
+WorkflowHub is a full-stack SaaS-style workflow and project management platform for managing projects, tasks, 
+users, and activity tracking with role-based access control.
 
-It consists of a React frontend and a C# .NET backend API working together to provide a modern workflow 
+It consists of a React frontend and an ASP.NET Core backend API working together to provide a modern workflow 
 management experience.
 
 ---
@@ -12,128 +12,223 @@ management experience.
 
 WorkflowHub allows users to:
 
-- Create and manage projects  
-- Assign users to projects  
-- Track tasks in a Kanban-style workflow  
-- Filter and update tasks in real time  
-- Manage users with role-based permissions  
-- View system activity logs for auditing  
+- Create and manage projects
+- Archive and restore project visibility
+- Assign users to projects
+- Create and manage tasks
+- Delete tasks with activity tracking
+- Track tasks in a Kanban-style workflow
+- Filter and update tasks in real time
+- Manage users with role-based permissions
+- View system activity logs for auditing
 
 ---
 
 ## Architecture
 
 ### Frontend
+
+Built using:
+
 - React (Hooks + Functional Components)
 - React Router
 - Axios
-- JWT authentication
+- JWT Authentication
+- Protected Routes
 - Role-based UI rendering
 
 ### Backend
+
+Built using:
+
 - ASP.NET Core Web API
 - Entity Framework Core
-- JWT authentication & authorization
-- Role-based access control (Admin / Manager / Employee)
-- SQL database
+- PostgreSQL
+- JWT Authentication & Authorization
+- Docker
+- Role-based access control
 
 ---
 
 ## Authentication & Roles
 
+WorkflowHub uses JWT authentication and permission-based authorization.
+
 ### Admin
+
 - Full system access
-- Can create managers and manage all users
+- Can manage all users
+- Can create managers
+- Can manage all projects/tasks
+- Full visibility across system resources
 
 ### Manager
-- Can manage projects
-- Can assign users to projects
-- Limited user visibility
+
+- Can create projects
+- Can manage assigned projects
+- Can assign users
+- Can manage tasks
 
 ### Employee
-- Can view assigned tasks only
-- Restricted access to admin features
+
+- Limited system permissions
+- Can view assigned work
+- Restricted from administrative actions
 
 ---
 
 ## Core Features
 
 ### Dashboard
-- Task summary (To Do, In Progress, Review, Done)
+
+- Task summary widgets
+- Workflow status overview
+- Project activity visibility
+
+---
 
 ### Projects
-- Create and view projects
+
+- Create projects
+- View project details
 - Assign users
-- Kanban-style project detail board
+- Archive projects
+- View archived projects
+- Kanban-style project workflow board
+
+---
 
 ### Tasks
-- Create tasks linked to projects
-- Filter by status, priority, and search
-- Pagination support
-- Inline status updates
 
-### Users (Admin)
-- View all users
+- Create project-linked tasks
+- Delete tasks
+- Update workflow status
+- Filter by:
+  - Status
+  - Priority
+  - Search terms
+- Pagination support
+- Due date tracking
+
+---
+
+### Users
+
+Admin functionality includes:
+
+- View users
 - Create manager accounts
 - Role-based filtering
+- Permission management
+
+---
 
 ### Activity Logs
-- Track system actions
-- Filter by user, task, or action type
+
+Tracks important system actions:
+
+- Project creation
+- Project archiving
+- User assignment
+- Task deletion
+- Task status updates
+- System workflow actions
+
+Provides audit visibility across the application.
 
 ---
 
 ## API Communication
 
-Frontend communicates with backend via REST API:
+Frontend communicates with backend through a REST API.
 
-- Authentication: `/auth`
-- Projects: `/projects`
-- Tasks: `/tasks`
-- Users: `/users`
-- Activity Logs: `/activity`
+Endpoints include:
 
-JWT tokens are stored in localStorage and attached to requests via Axios.
+```txt
+/auth
+/projects
+/tasks
+/users
+/activity
+```
+
+JWT access tokens are stored in localStorage and automatically attached to requests through Axios 
+interceptors.
 
 ---
 
 ## Deployment
 
 ### Frontend
-- React SPA
-- Connects to backend API via configured base URL
+
+- React Single Page Application
+- Hosted separately from backend
+- Uses configurable API base URL
+
+---
 
 ### Backend
+
 - ASP.NET Core Web API
-- Handles business logic and data persistence
+- Dockerized deployment
+- PostgreSQL persistence layer
+- Handles authentication, business logic, and database operations
 
 ---
 
 ## Project Structure
 
 ### Frontend
+
+```txt
 src/
-- components/
-- pages/
-- apiClient.js
-- auth.js
-- App.js
+├── components/
+├── pages/
+├── apiClient.js
+├── auth.js
+├── App.js
+└── index.js
+```
 
 ### Backend
-- Controllers/
-- DTOs/
-- Domain/
-- Infrastructure/
+
+```txt
+Controllers/
+DTOs/
+Domain/
+Infrastructure/
+Application/
+```
 
 ---
 
 ## Design Goals
 
-- Clean separation of frontend and backend
-- Role-based access control
-- Scalable API structure
-- Production-style UI
+- Clean separation of frontend and backend concerns
+- Scalable API architecture
+- Role-based security model
+- Production-style SaaS UI
 - Real-world workflow simulation
+- Audit logging support
+- Modular and maintainable code structure
+
+---
+
+## Technologies Used
+
+### Frontend
+
+- React
+- React Router
+- Axios
+
+### Backend
+
+- ASP.NET Core
+- Entity Framework Core
+- PostgreSQL
+- JWT Authentication
+- Docker
 
 ---
 
@@ -141,8 +236,15 @@ src/
 
 This project demonstrates:
 
+- Full-stack application architecture
 - React frontend development
-- Secure .NET backend API design
-- Authentication and authorization flows
-- Full-stack CRUD workflows
-- SaaS-style architecture and UI patterns
+- Secure ASP.NET backend API design
+- Authentication and authorization workflows
+- Role-based access control
+- REST API design
+- Activity logging systems
+- Dockerized deployment workflows
+- SaaS-style UI patterns and workflow systems
+
+Designed as a portfolio project intended to simulate production workflow management systems and enterprise 
+application patterns.
