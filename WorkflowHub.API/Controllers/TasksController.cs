@@ -22,7 +22,9 @@ public class TasksController : ControllerBase
     private readonly AppDbContext _context;
     private readonly ActivityLogService _activityLogService;
 
-    public TasksController(AppDbContext context, ActivityLogService activityLogService)
+    public TasksController(
+        AppDbContext context,
+        ActivityLogService activityLogService)
     {
         _context = context;
         _activityLogService = activityLogService;
@@ -43,11 +45,13 @@ public class TasksController : ControllerBase
         if (project == null)
             return NotFound("Project not found");
 
-        // SECURITY CHECK
-        if (role != Roles.Admin && project.OwnerId != Guid.Parse(userId))
+        if (project.IsArchived)
+            return BadRequest("Cannot add tasks to archived project");
+
+        if (role != Roles.Admin &&
+            project.OwnerId != Guid.Parse(userId))
             return Forbid();
 
-        // Validate assigned user exists
         if (request.AssignedUserId != null)
         {
             var userExists = await _context.Users
@@ -57,9 +61,12 @@ public class TasksController : ControllerBase
                 return BadRequest("Assigned user does not exist");
         }
 
-        var dueDateUtc = request.DueDate.Kind == DateTimeKind.Utc
+        var dueDateUtc =
+            request.DueDate.Kind == DateTimeKind.Utc
             ? request.DueDate
-            : DateTime.SpecifyKind(request.DueDate, DateTimeKind.Utc);
+            : DateTime.SpecifyKind(
+                request.DueDate,
+                DateTimeKind.Utc);
 
         var task = new TaskItem
         {
@@ -74,6 +81,7 @@ public class TasksController : ControllerBase
         };
 
         _context.Tasks.Add(task);
+
         await _context.SaveChangesAsync();
 
         return Ok(new TaskDto
@@ -102,13 +110,16 @@ public class TasksController : ControllerBase
         var query = _context.Tasks.AsQueryable();
 
         if (status.HasValue)
-            query = query.Where(t => t.Status == status.Value);
+            query = query.Where(t =>
+                t.Status == status.Value);
 
         if (userId.HasValue)
-            query = query.Where(t => t.AssignedUserId == userId);
+            query = query.Where(t =>
+                t.AssignedUserId == userId);
 
         if (!string.IsNullOrEmpty(priority))
-            query = query.Where(t => t.Priority == priority);
+            query = query.Where(t =>
+                t.Priority == priority);
 
         if (!string.IsNullOrWhiteSpace(search))
         {
@@ -117,7 +128,8 @@ public class TasksController : ControllerBase
                 t.Description.Contains(search));
         }
 
-        var totalCount = await query.CountAsync();
+        var totalCount =
+            await query.CountAsync();
 
         var tasks = await query
             .Skip((page - 1) * pageSize)
@@ -187,28 +199,39 @@ public class TasksController : ControllerBase
     }
 
     [HttpPut("{id}/status")]
-    public async Task<IActionResult> UpdateStatus(Guid id, TaskStatus status)
+    public async Task<IActionResult> UpdateStatus(
+        Guid id,
+        TaskStatus status)
     {
-        var task = await _context.Tasks.FindAsync(id);
+        var task =
+            await _context.Tasks.FindAsync(id);
 
         if (task == null)
             return NotFound();
 
         var oldStatus = task.Status;
 
-        var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-        var role = User.FindFirst(ClaimTypes.Role)?.Value;
+        var userId =
+            User.FindFirst(
+                ClaimTypes.NameIdentifier)?.Value;
+
+        var role =
+            User.FindFirst(
+                ClaimTypes.Role)?.Value;
 
         if (userId == null || role == null)
             return Unauthorized();
 
-        // Only Admin + Manager can update status
         if (role == Roles.Employee)
             return Forbid();
 
         try
         {
-            TaskWorkflowService.EnforceTransition(task.Status, status, role);
+            TaskWorkflowService
+                .EnforceTransition(
+                    task.Status,
+                    status,
+                    role);
         }
         catch (InvalidOperationException ex)
         {
@@ -221,7 +244,8 @@ public class TasksController : ControllerBase
 
         await _activityLogService.LogAsync(
             action: "TaskStatusChanged",
-            details: $"Status changed from {oldStatus} to {status}",
+            details:
+            $"Status changed from {oldStatus} to {status}",
             userId: Guid.Parse(userId),
             taskId: task.Id
         );
@@ -237,5 +261,58 @@ public class TasksController : ControllerBase
             Status = task.Status,
             Priority = task.Priority
         });
+    }
+
+    [HttpDelete("{id}")]
+    public async Task<IActionResult> DeleteTask(Guid id)
+    {
+        var userId =
+            User.FindFirst(
+                ClaimTypes.NameIdentifier)?.Value;
+
+        var role =
+            User.FindFirst(
+                ClaimTypes.Role)?.Value;
+
+        if (userId == null || role == null)
+            return Unauthorized();
+
+        var userGuid = Guid.Parse(userId);
+
+        var task = await _context.Tasks
+            .Include(t => t.Project)
+            .FirstOrDefaultAsync(t => t.Id == id);
+
+        if (task == null)
+            return NotFound();
+
+        if (task.Project.IsArchived)
+            return BadRequest(
+                "Cannot modify archived project");
+
+        if (role == Roles.Employee)
+            return Forbid();
+
+        var ownsProject =
+            task.Project.OwnerId == userGuid;
+
+        if (role != Roles.Admin &&
+            !ownsProject)
+            return Forbid();
+
+        await _activityLogService.LogAsync(
+            action: "TaskDeleted",
+            details:
+            $"Deleted task '{task.Title}'",
+            userId: userGuid,
+            taskId: task.Id,
+            projectId: task.ProjectId
+        );
+
+        _context.Tasks.Remove(task);
+
+        await _context.SaveChangesAsync();
+
+        return Ok();
     }
 }

@@ -76,16 +76,11 @@ public class ProjectsController : ControllerBase
         IQueryable<Project> query = _context.Projects
             .Where(p => !p.IsArchived);
 
-        // Admin sees everything
-        if (role == Roles.Admin)
-        {
-            // no filter
-        }
-        else
+        if (role != Roles.Admin)
         {
             query = query.Where(p =>
-                p.OwnerId == userGuid || // owns project
-                p.ProjectUsers.Any(pu => pu.UserId == userGuid) // assigned to project
+                p.OwnerId == userGuid ||
+                p.ProjectUsers.Any(pu => pu.UserId == userGuid)
             );
         }
 
@@ -119,7 +114,8 @@ public class ProjectsController : ControllerBase
     {
         var users = await _context.ProjectUsers
             .Where(pu => pu.ProjectId == projectId)
-            .Select(pu => new {
+            .Select(pu => new
+            {
                 pu.User.Id,
                 pu.User.Username,
                 pu.User.Role
@@ -130,11 +126,18 @@ public class ProjectsController : ControllerBase
     }
 
     [HttpPost("{projectId}/assign/{userId}")]
-    [Authorize]
     public async Task<IActionResult> AssignUser(Guid projectId, Guid userId)
     {
-        var currentUserId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-        var role = User.FindFirst(ClaimTypes.Role)?.Value;
+        var currentUserId =
+            User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+        var role =
+            User.FindFirst(ClaimTypes.Role)?.Value;
+
+        if (currentUserId == null || role == null)
+            return Unauthorized();
+
+        var currentUserGuid = Guid.Parse(currentUserId);
 
         var project = await _context.Projects
             .FirstOrDefaultAsync(p => p.Id == projectId);
@@ -142,27 +145,26 @@ public class ProjectsController : ControllerBase
         if (project == null)
             return NotFound();
 
+        if (project.IsArchived)
+            return BadRequest("Cannot modify archived project");
+
         var userToAssign = await _context.Users
             .FirstOrDefaultAsync(u => u.Id == userId);
 
         if (userToAssign == null)
             return NotFound();
 
-        // Employees cannot assign anyone
         if (role == Roles.Employee)
             return Forbid();
 
-        if (currentUserId == null || role == null)
-            return Unauthorized();
-
-        // Managers can only assign employees
-        if (role == Roles.Manager && userToAssign.Role != Roles.Employee)
+        if (role == Roles.Manager &&
+            userToAssign.Role != Roles.Employee)
             return Forbid();
 
-        var currentUserGuid = Guid.Parse(currentUserId);
-
         var exists = await _context.ProjectUsers
-            .AnyAsync(x => x.ProjectId == projectId && x.UserId == userId);
+            .AnyAsync(x =>
+                x.ProjectId == projectId &&
+                x.UserId == userId);
 
         if (!exists)
         {
@@ -172,40 +174,64 @@ public class ProjectsController : ControllerBase
                 UserId = userId
             });
 
+            _context.ActivityLogs.Add(new ActivityLog
+            {
+                Id = Guid.NewGuid(),
+                Action = "User Assigned",
+                Details =
+                    $"User {userToAssign.Username} assigned to project {project.Name}",
+                CreatedAt = DateTime.UtcNow,
+                UserId = currentUserGuid,
+                TaskId = null,
+                ProjectId = project.Id
+            });
+
             await _context.SaveChangesAsync();
         }
-
-        _context.ActivityLogs.Add(new ActivityLog
-        {
-            Id = Guid.NewGuid(),
-            Action = "User Assigned",
-            Details = $"User {userToAssign.Username} assigned to project {project.Name}",
-            CreatedAt = DateTime.UtcNow,
-            UserId = currentUserGuid,
-            TaskId = null,
-            ProjectId = project.Id
-        });
-
-        await _context.SaveChangesAsync();
 
         return Ok();
     }
 
     [HttpPut("{id}/archive")]
-    [Authorize]
     public async Task<IActionResult> ArchiveProject(Guid id)
     {
-        var role = User.FindFirst(ClaimTypes.Role)?.Value;
+        var userId =
+            User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
 
-        if (role != Roles.Admin)
-            return Forbid();
+        var role =
+            User.FindFirst(ClaimTypes.Role)?.Value;
 
-        var project = await _context.Projects.FindAsync(id);
+        if (userId == null || role == null)
+            return Unauthorized();
+
+        var userGuid = Guid.Parse(userId);
+
+        var project = await _context.Projects
+            .FirstOrDefaultAsync(p => p.Id == id);
 
         if (project == null)
             return NotFound();
 
+        var isOwner = project.OwnerId == userGuid;
+
+        if (role != Roles.Admin && !isOwner)
+            return Forbid();
+
+        if (project.IsArchived)
+            return BadRequest("Project already archived");
+
         project.IsArchived = true;
+
+        _context.ActivityLogs.Add(new ActivityLog
+        {
+            Id = Guid.NewGuid(),
+            Action = "Project Archived",
+            Details = $"Project '{project.Name}' archived",
+            CreatedAt = DateTime.UtcNow,
+            UserId = userGuid,
+            TaskId = null,
+            ProjectId = project.Id
+        });
 
         await _context.SaveChangesAsync();
 

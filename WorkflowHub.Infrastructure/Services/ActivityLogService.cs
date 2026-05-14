@@ -16,7 +16,8 @@ public class ActivityLogService
         string action,
         string details,
         Guid userId,
-        Guid? taskId = null
+        Guid? taskId = null,
+        Guid? projectId = null
     )
     {
         var log = new ActivityLog
@@ -26,10 +27,12 @@ public class ActivityLogService
             Details = details,
             UserId = userId,
             TaskId = taskId,
+            ProjectId = projectId,
             CreatedAt = DateTime.UtcNow
         };
 
         _context.ActivityLogs.Add(log);
+
         await _context.SaveChangesAsync();
     }
 }
