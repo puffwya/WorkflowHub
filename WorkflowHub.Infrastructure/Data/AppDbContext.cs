@@ -19,6 +19,9 @@ public class AppDbContext : DbContext
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
+        base.OnModelCreating(modelBuilder);
+
+        // Project <-> User
         modelBuilder.Entity<ProjectUser>()
             .HasKey(pu => new { pu.ProjectId, pu.UserId });
 
@@ -31,5 +34,15 @@ public class AppDbContext : DbContext
             .HasOne(pu => pu.User)
             .WithMany(u => u.ProjectUsers)
             .HasForeignKey(pu => pu.UserId);
+    }
+
+    // GLOBAL DATE TIME UTC ENFORCEMENT
+    protected override void ConfigureConventions(ModelConfigurationBuilder configurationBuilder)
+    {
+        configurationBuilder.Properties<DateTime>()
+            .HaveConversion(
+                v => v.ToUniversalTime(),
+                v => DateTime.SpecifyKind(v, DateTimeKind.Utc)
+            );
     }
 }

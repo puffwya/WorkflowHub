@@ -57,12 +57,16 @@ public class TasksController : ControllerBase
                 return BadRequest("Assigned user does not exist");
         }
 
+        var dueDateUtc = request.DueDate.Kind == DateTimeKind.Utc
+            ? request.DueDate
+            : DateTime.SpecifyKind(request.DueDate, DateTimeKind.Utc);
+
         var task = new TaskItem
         {
             Id = Guid.NewGuid(),
             Title = request.Title,
             Description = request.Description,
-            DueDate = request.DueDate,
+            DueDate = dueDateUtc,
             ProjectId = request.ProjectId,
             AssignedUserId = request.AssignedUserId,
             Status = TaskStatus.ToDo,
@@ -72,7 +76,7 @@ public class TasksController : ControllerBase
         _context.Tasks.Add(task);
         await _context.SaveChangesAsync();
 
-        var result = new TaskDto
+        return Ok(new TaskDto
         {
             Id = task.Id,
             Title = task.Title,
@@ -82,9 +86,7 @@ public class TasksController : ControllerBase
             AssignedUserId = task.AssignedUserId,
             Status = task.Status,
             Priority = task.Priority
-        };
-
-        return Ok(result);
+        });
     }
 
     [HttpGet]
