@@ -35,6 +35,12 @@ public class AppDbContext : DbContext
             .WithMany(u => u.ProjectUsers)
             .HasForeignKey(pu => pu.UserId);
 
+        modelBuilder.Entity<ActivityLog>()
+            .HasOne<TaskItem>()
+            .WithMany()
+            .HasForeignKey(a => a.TaskId)
+            .OnDelete(DeleteBehavior.SetNull);
+
         var utcConverter = new ValueConverter<DateTime, DateTime>(
             v => v.ToUniversalTime(),
             v => DateTime.SpecifyKind(v, DateTimeKind.Utc)
