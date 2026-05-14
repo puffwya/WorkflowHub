@@ -4,12 +4,19 @@ import apiClient from "../apiClient";
 
 function Projects() {
   const [projects, setProjects] = useState([]);
+  const [includeArchived, setIncludeArchived] = useState(false);
+
   const navigate = useNavigate();
 
   useEffect(() => {
     const fetchProjects = async () => {
       try {
-        const res = await apiClient.get("/projects");
+        const res = await apiClient.get("/projects", {
+          params: {
+            includeArchived: includeArchived ? true : undefined,
+          },
+        });
+
         setProjects(res.data);
       } catch (err) {
         console.error("Failed to fetch projects", err);
@@ -17,7 +24,7 @@ function Projects() {
     };
 
     fetchProjects();
-  }, []);
+  }, [includeArchived]);
 
   return (
     <div style={styles.page}>
@@ -29,12 +36,23 @@ function Projects() {
           </p>
         </div>
 
-        <button
-          style={styles.createButton}
-          onClick={() => navigate("/projects/new")}
-        >
-          + Create Project
-        </button>
+        <div style={styles.headerActions}>
+          <label style={styles.toggle}>
+            <input
+              type="checkbox"
+              checked={includeArchived}
+              onChange={(e) => setIncludeArchived(e.target.checked)}
+            />
+            <span>Show archived</span>
+          </label>
+
+          <button
+            style={styles.createButton}
+            onClick={() => navigate("/projects/new")}
+          >
+            + Create Project
+          </button>
+        </div>
       </div>
 
       {projects.length === 0 ? (
@@ -48,11 +66,20 @@ function Projects() {
             <div
               key={project.id}
               onClick={() => navigate(`/projects/${project.id}`)}
-              style={styles.card}
+              style={{
+                ...styles.card,
+                opacity: project.isArchived ? 0.6 : 1,
+              }}
             >
               <h3 style={styles.projectTitle}>
                 {project.name}
               </h3>
+
+              {project.isArchived && (
+                <div style={styles.archivedBadge}>
+                  Archived
+                </div>
+              )}
 
               <p style={styles.projectMeta}>
                 Click to open project
@@ -75,10 +102,25 @@ const styles = {
   header: {
     display: "flex",
     justifyContent: "space-between",
-    alignItems: "center",
+    alignItems: "flex-start",
     marginBottom: "40px",
     gap: "20px",
     flexWrap: "wrap",
+  },
+
+  headerActions: {
+    display: "flex",
+    alignItems: "center",
+    gap: "16px",
+  },
+
+  toggle: {
+    display: "flex",
+    alignItems: "center",
+    gap: "8px",
+    fontSize: "0.9rem",
+    color: "#374151",
+    userSelect: "none",
   },
 
   title: {
@@ -127,6 +169,7 @@ const styles = {
     boxShadow: "0 10px 25px rgba(0,0,0,0.06)",
     transition: "transform 0.15s ease",
     border: "1px solid #e5e7eb",
+    position: "relative",
   },
 
   projectTitle: {
@@ -140,6 +183,18 @@ const styles = {
     margin: 0,
     color: "#6b7280",
     fontSize: "0.95rem",
+  },
+
+  archivedBadge: {
+    position: "absolute",
+    top: "12px",
+    right: "12px",
+    backgroundColor: "#fee2e2",
+    color: "#991b1b",
+    padding: "4px 8px",
+    borderRadius: "999px",
+    fontSize: "0.75rem",
+    fontWeight: "700",
   },
 };
 

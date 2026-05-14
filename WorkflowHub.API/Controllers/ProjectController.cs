@@ -237,4 +237,47 @@ public class ProjectsController : ControllerBase
 
         return Ok();
     }
+
+
+    [HttpGet]
+    public async Task<IActionResult> GetProjects([FromQuery] bool includeArchived = false)
+    {
+        var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        var role = User.FindFirst(ClaimTypes.Role)?.Value;
+
+        if (userId == null || role == null)
+            return Unauthorized();
+
+        var userGuid = Guid.Parse(userId);
+
+        IQueryable<Project> query = _context.Projects;
+
+        // archive filtering toggle
+        if (!includeArchived)
+        {
+            query = query.Where(p => !p.IsArchived);
+        }
+
+        // Admin sees everything (still respects includeArchived toggle)
+        if (role != Roles.Admin)
+        {
+            query = query.Where(p =>
+                p.OwnerId == userGuid ||
+                p.ProjectUsers.Any(pu => pu.UserId == userGuid)
+            );
+        }
+
+        var projects = await query
+            .Select(p => new
+            {
+                p.Id,
+                p.Name,
+                p.Description,
+                p.IsArchived
+            })
+            .ToListAsync();
+
+        return Ok(projects);
+    }
+
 }
