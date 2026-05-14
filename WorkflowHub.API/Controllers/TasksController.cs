@@ -270,7 +270,6 @@ public class TasksController : ControllerBase
             details: $"Deleted task '{task.Title}'",
             userId: userGuid,
             taskId: task.Id,
-            projectId: task.ProjectId
         );
 
         _context.Tasks.Remove(task);
