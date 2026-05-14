@@ -61,6 +61,22 @@ function Tasks() {
     }
   };
 
+  const deleteTask = async (taskId) => {
+    const confirmDelete = window.confirm(
+      "Are you sure you want to delete this task?"
+    );
+
+    if (!confirmDelete) return;
+
+    try {
+      await apiClient.delete(`/tasks/${taskId}`);
+      fetchTasks();
+    } catch (err) {
+      console.error("Failed to delete task", err);
+      alert("Failed to delete task");
+    }
+  };
+
   if (loading) {
     return (
       <div style={styles.loadingContainer}>
@@ -142,6 +158,7 @@ function Tasks() {
               <th style={styles.th}>Status</th>
               <th style={styles.th}>Priority</th>
               <th style={styles.th}>Due Date</th>
+              <th style={styles.th}>Actions</th>
             </tr>
           </thead>
 
@@ -169,6 +186,16 @@ function Tasks() {
 
                 <td style={styles.td}>
                   {new Date(t.dueDate).toLocaleDateString()}
+                </td>
+
+                <td style={styles.td}>
+                  <button
+                    onClick={() => deleteTask(t.id)}
+                    style={styles.deleteButton}
+                    title="Delete Task"
+                  >
+                    ✕
+                  </button>
                 </td>
               </tr>
             ))}
@@ -318,6 +345,16 @@ const styles = {
     padding: "8px 10px",
     borderRadius: "8px",
     border: "1px solid #d1d5db",
+  },
+
+  deleteButton: {
+    backgroundColor: "#fee2e2",
+    color: "#b91c1c",
+    border: "none",
+    padding: "6px 10px",
+    borderRadius: "8px",
+    cursor: "pointer",
+    fontWeight: "700",
   },
 
   pagination: {
