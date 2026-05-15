@@ -14,8 +14,8 @@ Built with React and ASP.NET Core, WorkflowHub simulates a production-grade work
 
 ## Preview
 
-![Dashboard](images/dashboard.png)
-![Kanban Board](images/kanban.png)
+![Dashboard](images/dashboard.jpeg)
+![Kanban Board](images/kanban.jpeg)
 
 ---
 
