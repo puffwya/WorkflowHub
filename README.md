@@ -1,250 +1,90 @@
 # WorkflowHub
 
-WorkflowHub is a full-stack SaaS-style workflow and project management platform for managing projects, tasks, 
-users, and activity tracking with role-based access control.
+A full-stack SaaS-style workflow and project management platform for managing projects, tasks, and users with role-based access control.
 
-It consists of a React frontend and an ASP.NET Core backend API working together to provide a modern workflow 
-management experience.
+Built with React and ASP.NET Core, WorkflowHub simulates a production-grade workflow system with authentication, activity logging, and scalable backend architecture.
 
 ---
 
-## Overview
+## Live Demo
 
-WorkflowHub allows users to:
-
-- Create and manage projects
-- Archive and restore project visibility
-- Assign users to projects
-- Create and manage tasks
-- Delete tasks with activity tracking
-- Track tasks in a Kanban-style workflow
-- Filter and update tasks in real time
-- Manage users with role-based permissions
-- View system activity logs for auditing
+[View App](https://puffwya.github.io/WorkflowHub/#/login)
 
 ---
 
-## Architecture
+## Preview
 
-### Frontend
-
-Built using:
-
-- React (Hooks + Functional Components)
-- React Router
-- Axios
-- JWT Authentication
-- Protected Routes
-- Role-based UI rendering
-
-### Backend
-
-Built using:
-
-- ASP.NET Core Web API
-- Entity Framework Core
-- PostgreSQL
-- JWT Authentication & Authorization
-- Docker
-- Role-based access control
-
----
-
-## Authentication & Roles
-
-WorkflowHub uses JWT authentication and permission-based authorization.
-
-### Admin
-
-- Full system access
-- Can manage all users
-- Can create managers
-- Can manage all projects/tasks
-- Full visibility across system resources
-
-### Manager
-
-- Can create projects
-- Can manage assigned projects
-- Can assign users
-- Can manage tasks
-
-### Employee
-
-- Limited system permissions
-- Can view assigned work
-- Restricted from administrative actions
+![Dashboard](images/dashboard.png)
+![Kanban Board](images/kanban.png)
 
 ---
 
 ## Core Features
 
-### Dashboard
-
-- Task summary widgets
-- Workflow status overview
-- Project activity visibility
-
----
-
-### Projects
-
-- Create projects
-- View project details
-- Assign users
-- Archive projects
-- View archived projects
-- Kanban-style project workflow board
+- Project and task management system
+- Kanban-style workflow tracking
+- Role-based access control (Admin / Manager / Employee)
+- JWT authentication and protected routes
+- Activity logging and audit tracking
+- User and permission management
+- Real-time task filtering and updates
 
 ---
 
-### Tasks
-
-- Create project-linked tasks
-- Delete tasks
-- Update workflow status
-- Filter by:
-  - Status
-  - Priority
-  - Search terms
-- Pagination support
-- Due date tracking
-
----
-
-### Users
-
-Admin functionality includes:
-
-- View users
-- Create manager accounts
-- Role-based filtering
-- Permission management
-
----
-
-### Activity Logs
-
-Tracks important system actions:
-
-- Project creation
-- Project archiving
-- User assignment
-- Task deletion
-- Task status updates
-- System workflow actions
-
-Provides audit visibility across the application.
-
----
-
-## API Communication
-
-Frontend communicates with backend through a REST API.
-
-Endpoints include:
-
-```txt
-/auth
-/projects
-/tasks
-/users
-/activity
-```
-
-JWT access tokens are stored in localStorage and automatically attached to requests through Axios 
-interceptors.
-
----
-
-## Deployment
+## Architecture Overview
 
 ### Frontend
-
-- React Single Page Application
-- Hosted separately from backend
-- Uses configurable API base URL
-
----
-
-### Backend
-
-- ASP.NET Core Web API
-- Dockerized deployment
-- PostgreSQL persistence layer
-- Handles authentication, business logic, and database operations
-
----
-
-## Project Structure
-
-### Frontend
-
-```txt
-src/
-├── components/
-├── pages/
-├── apiClient.js
-├── auth.js
-├── App.js
-└── index.js
-```
-
-### Backend
-
-```txt
-Controllers/
-DTOs/
-Domain/
-Infrastructure/
-Application/
-```
-
----
-
-## Design Goals
-
-- Clean separation of frontend and backend concerns
-- Scalable API architecture
-- Role-based security model
-- Production-style SaaS UI
-- Real-world workflow simulation
-- Audit logging support
-- Modular and maintainable code structure
-
----
-
-## Technologies Used
-
-### Frontend
-
-- React
+- React (Hooks + Functional Components)
 - React Router
-- Axios
+- Axios with JWT interceptors
+- Role-based UI rendering
 
 ### Backend
-
-- ASP.NET Core
+- ASP.NET Core Web API
+- Clean layered architecture (Controller → Service → Repository)
 - Entity Framework Core
-- PostgreSQL
-- JWT Authentication
-- Docker
+- PostgreSQL database
+- JWT authentication & authorization
+- Dockerized deployment support
+
+---
+
+## System Design Highlights
+
+- Secure authentication with JWT
+- Role-based permission system
+- RESTful API design
+- Audit logging for system actions
+- Modular service architecture
+- Separation of frontend/backend concerns
+
+---
+
+## Key Roles
+
+**Admin**
+- Full system access
+- User and role management
+- Global project/task control
+
+**Manager**
+- Project creation and management
+- Task assignment and tracking
+- Team coordination
+
+**Employee**
+- View assigned work
+- Update task status
+- Limited system access
+
+---
+
+## Tech Stack
+
+`React` `ASP.NET Core` `Entity Framework Core` `PostgreSQL` `JWT` `Docker`
 
 ---
 
 ## Notes
 
-This project demonstrates:
-
-- Full-stack application architecture
-- React frontend development
-- Secure ASP.NET backend API design
-- Authentication and authorization workflows
-- Role-based access control
-- REST API design
-- Activity logging systems
-- Dockerized deployment workflows
-- SaaS-style UI patterns and workflow systems
-
-Designed as a portfolio project intended to simulate production workflow management systems and enterprise 
-application patterns.
+This project helped me understand production-style full-stack engineering concepts including authentication systems, role-based access control, scalable API architecture, and modern SaaS UI patterns.
