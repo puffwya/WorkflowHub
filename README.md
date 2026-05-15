@@ -87,4 +87,4 @@ Built with React and ASP.NET Core, WorkflowHub simulates a production-grade work
 
 ## Notes
 
-This project helped me understand production-style full-stack engineering concepts including authentication systems, role-based access control, scalable API architecture, and modern SaaS UI patterns.
+This project helped me to understand production-style full-stack engineering concepts including authentication systems, role-based access control, scalable API architecture, and modern SaaS UI patterns.
