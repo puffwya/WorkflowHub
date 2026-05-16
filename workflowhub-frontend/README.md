@@ -1,9 +1,18 @@
 # WorkflowHub Frontend
 
-A modern project and task management frontend built with React.
+A modern React-based frontend for the WorkflowHub full-stack workflow management system.
 
-This application is part of the WorkflowHub full-stack system, designed to manage projects, tasks, user roles, and 
-activity tracking in a SaaS-style workflow environment.
+Built as a SaaS-style dashboard for managing projects, tasks, users, and activity tracking with role-based access 
+control.
+
+---
+
+## Overview
+
+This frontend is part of the WorkflowHub system and provides a responsive UI for interacting with a secure ASP.NET Core 
+backend API.
+
+It enables users to manage workflows, track tasks, and interact with project data in real time.
 
 ---
 
@@ -13,33 +22,60 @@ activity tracking in a SaaS-style workflow environment.
 - React Router
 - Axios
 - JWT Authentication
-- REST API Integration (.NET Backend)
+- REST API integration (.NET backend)
 
 ---
 
 ## Features
 
-- User authentication (login/register with JWT)
-- Role-based access control (Admin / Manager / Employee)
-- Dashboard with task status summaries
-- Project management system
-  - Create projects
-  - Archive projects
-  - View archived projects
-  - Assign users to projects
-- Task management system
-  - Create tasks
-  - Delete tasks
-  - Status workflow updates
-  - Filtering and pagination
-- Activity logging / audit tracking
-- Project-level Kanban workflow
-- Protected API routes using JWT authentication
-- Responsive SaaS-style dashboard UI
+### Authentication & Security
+- JWT-based login and session handling
+- Protected routes
+- Role-based UI rendering (Admin / Manager / Employee)
+
+### Dashboard
+- Task summary widgets
+- Project overview
+- Status tracking
+
+### Project Management
+- Create and manage projects
+- Archive / restore projects
+- Assign users to projects
+- Project detail views
+
+### Task Management
+- Create, update, and delete tasks
+- Status workflow updates
+- Filtering and pagination
+- Priority and due date tracking
+
+### Activity Tracking
+- Project creation events
+- Task updates and deletions
+- User assignment logging
 
 ---
 
-## Installation
+## Backend Integration
+
+This frontend communicates with a separate ASP.NET Core API responsible for:
+
+- Authentication (JWT)
+- Project and task CRUD operations
+- Role-based authorization
+- Activity logging
+- PostgreSQL data persistence
+
+---
+
+## Environment Setup
+
+Create a `.env` file in the root directory:
+
+```env
+REACT_APP_API_BASE_URL=http://localhost:5000
+```
 
 Install dependencies:
 
@@ -47,11 +83,7 @@ Install dependencies:
 npm install
 ```
 
----
-
-## Running the App
-
-Start the development server:
+Run the development server:
 
 ```bash
 npm start
@@ -59,18 +91,8 @@ npm start
 
 The app will run at:
 
-```txt
-http://localhost:3000
 ```
-
----
-
-## Environment Variables
-
-Create a `.env` file in the root of the frontend project:
-
-```env
-REACT_APP_API_BASE_URL=http://localhost:5000
+http://localhost:3000
 ```
 
 ---
@@ -89,67 +111,17 @@ src/
 
 ---
 
-## Backend Integration
+## Design Goals
 
-This frontend connects to a separate ASP.NET Core backend API responsible for:
-
-- JWT authentication
-- Projects & tasks CRUD operations
-- Role management
-- Activity logging
-- Workflow enforcement
-- PostgreSQL database access
-
----
-
-## UI Features
-
-### Projects
-
-- Create and manage projects
-- Archive inactive projects
-- Toggle archived project visibility
-- Project detail pages
-- User assignment support
-
-### Tasks
-
-- Create and delete tasks
-- Task filtering and pagination
-- Status workflow updates
-- Priority tracking
-- Due date management
-
-### Activity Logs
-
-- Tracks important actions such as:
-  - Project creation
-  - Project archiving
-  - Task deletion
-  - Status changes
-  - User assignment
-
----
-
-## Authentication
-
-WorkflowHub uses JWT authentication for secure API access.
-
-Authenticated users receive protected access based on their assigned role:
-
-- **Admin**
-  - Full system access
-- **Manager**
-  - Project and task management access
-- **Employee**
-  - Limited task interaction permissions
+- Clean separation from backend logic
+- Modular and reusable React components
+- Secure API communication via JWT
+- SaaS-style dashboard UX
+- Scalable frontend architecture
 
 ---
 
 ## Notes
 
-- Built as a production-style SaaS portfolio project
-- Focused on full-stack architecture and scalable workflow management
-- Designed with clean UI patterns and modular React structure
-- Backend deployed separately using Docker + Render
-```
+This frontend is part of a production-style full-stack system designed to simulate real-world SaaS workflow platforms 
+with authentication, role-based access control, and modular system design.
