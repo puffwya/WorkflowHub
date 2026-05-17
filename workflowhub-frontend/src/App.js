@@ -13,6 +13,7 @@ import Projects from "./pages/Projects";
 import ProjectCreate from "./pages/ProjectCreate";
 import ProjectDetail from "./components/ProjectDetail";
 import TasksPage from "./pages/TasksPage";
+import TaskDetails from "./pages/TaskDetails";
 import TaskCreatePage from "./pages/TaskCreatePage";
 import AdminUsers from "./components/AdminUsers";
 
@@ -51,6 +52,15 @@ function App() {
           element={
             <ProtectedRoute>
               <TasksPage />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="tasks/:id"
+          element={
+            <ProtectedRoute>
+              <TaskDetails />
             </ProtectedRoute>
           }
         />

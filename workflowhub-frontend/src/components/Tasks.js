@@ -1,5 +1,9 @@
 import React, { useEffect, useState, useCallback } from "react";
-import { Link, useSearchParams } from "react-router-dom";
+import {
+  Link,
+  useSearchParams,
+  useNavigate,
+} from "react-router-dom";
 import apiClient from "../apiClient";
 
 function Tasks() {
@@ -8,6 +12,8 @@ function Tasks() {
 
   const [searchParams] = useSearchParams();
   const projectId = searchParams.get("projectId");
+
+  const navigate = useNavigate();
 
   const [status, setStatus] = useState("");
   const [priority, setPriority] = useState("");
@@ -50,13 +56,21 @@ function Tasks() {
 
   const updateStatus = async (taskId, newStatus) => {
     try {
-      await apiClient.put(`/tasks/${taskId}/status`, null, {
-        params: { status: newStatus },
-      });
+      await apiClient.put(
+        `/tasks/${taskId}/status`,
+        null,
+        {
+          params: { status: newStatus },
+        }
+      );
 
       fetchTasks();
     } catch (err) {
-      console.error("Failed to update status", err);
+      console.error(
+        "Failed to update status",
+        err
+      );
+
       alert("Failed to update status");
     }
   };
@@ -70,9 +84,14 @@ function Tasks() {
 
     try {
       await apiClient.delete(`/tasks/${taskId}`);
+
       fetchTasks();
     } catch (err) {
-      console.error("Failed to delete task", err);
+      console.error(
+        "Failed to delete task",
+        err
+      );
+
       alert("Failed to delete task");
     }
   };
@@ -80,7 +99,9 @@ function Tasks() {
   if (loading) {
     return (
       <div style={styles.loadingContainer}>
-        <p style={styles.loadingText}>Loading tasks...</p>
+        <p style={styles.loadingText}>
+          Loading tasks...
+        </p>
       </div>
     );
   }
@@ -89,25 +110,31 @@ function Tasks() {
     <div style={styles.page}>
       <div style={styles.header}>
         <div>
-          <h1 style={styles.title}>Tasks</h1>
+          <h1 style={styles.title}>
+            Tasks
+          </h1>
 
           <p style={styles.subtitle}>
             Track and manage your workflow tasks
           </p>
         </div>
 
-        <Link to="/tasks/new" style={styles.createButton}>
+        <Link
+          to="/tasks/new"
+          style={styles.createButton}
+        >
           + Create Task
         </Link>
       </div>
 
       {projectId && (
         <div style={styles.projectFilter}>
-          Filtering by Project ID: {projectId}
+          Filtering by Project ID:
+          {" "}
+          {projectId}
         </div>
       )}
 
-      {/* Filters */}
       <div style={styles.filterBar}>
         <input
           placeholder="Search tasks..."
@@ -127,11 +154,25 @@ function Tasks() {
           }}
           style={styles.select}
         >
-          <option value="">All Status</option>
-          <option value="0">To Do</option>
-          <option value="1">In Progress</option>
-          <option value="2">Review</option>
-          <option value="3">Done</option>
+          <option value="">
+            All Status
+          </option>
+
+          <option value="0">
+            To Do
+          </option>
+
+          <option value="1">
+            In Progress
+          </option>
+
+          <option value="2">
+            Review
+          </option>
+
+          <option value="3">
+            Done
+          </option>
         </select>
 
         <select
@@ -142,56 +183,117 @@ function Tasks() {
           }}
           style={styles.select}
         >
-          <option value="">All Priority</option>
-          <option value="Low">Low</option>
-          <option value="Medium">Medium</option>
-          <option value="High">High</option>
+          <option value="">
+            All Priority
+          </option>
+
+          <option value="Low">
+            Low
+          </option>
+
+          <option value="Medium">
+            Medium
+          </option>
+
+          <option value="High">
+            High
+          </option>
         </select>
       </div>
 
-      {/* Table */}
       <div style={styles.tableContainer}>
         <table style={styles.table}>
           <thead>
             <tr>
-              <th style={styles.th}>Title</th>
-              <th style={styles.th}>Status</th>
-              <th style={styles.th}>Priority</th>
-              <th style={styles.th}>Due Date</th>
-              <th style={styles.th}>Actions</th>
+              <th style={styles.th}>
+                Title
+              </th>
+
+              <th style={styles.th}>
+                Status
+              </th>
+
+              <th style={styles.th}>
+                Priority
+              </th>
+
+              <th style={styles.th}>
+                Due Date
+              </th>
+
+              <th style={styles.th}>
+                Actions
+              </th>
             </tr>
           </thead>
 
           <tbody>
             {tasks.map((t) => (
-              <tr key={t.id} style={styles.row}>
-                <td style={styles.td}>{t.title}</td>
+              <tr
+                key={t.id}
+                style={styles.row}
+                onClick={() =>
+                  navigate(`/tasks/${t.id}`)
+                }
+              >
+                <td style={styles.td}>
+                  {t.title}
+                </td>
 
                 <td style={styles.td}>
                   <select
                     value={t.status}
-                    onChange={(e) =>
-                      updateStatus(t.id, e.target.value)
+                    onClick={(e) =>
+                      e.stopPropagation()
                     }
-                    style={styles.statusSelect}
+                    onChange={(e) =>
+                      updateStatus(
+                        t.id,
+                        e.target.value
+                      )
+                    }
+                    style={
+                      styles.statusSelect
+                    }
                   >
-                    <option value="0">To Do</option>
-                    <option value="1">In Progress</option>
-                    <option value="2">Review</option>
-                    <option value="3">Done</option>
+                    <option value="0">
+                      To Do
+                    </option>
+
+                    <option value="1">
+                      In Progress
+                    </option>
+
+                    <option value="2">
+                      Review
+                    </option>
+
+                    <option value="3">
+                      Done
+                    </option>
                   </select>
                 </td>
 
-                <td style={styles.td}>{t.priority}</td>
+                <td style={styles.td}>
+                  {t.priority}
+                </td>
 
                 <td style={styles.td}>
-                  {new Date(t.dueDate).toLocaleDateString()}
+                  {new Date(
+                    t.dueDate
+                  ).toLocaleDateString()}
                 </td>
 
                 <td style={styles.td}>
                   <button
-                    onClick={() => deleteTask(t.id)}
-                    style={styles.deleteButton}
+                    onClick={(e) => {
+                      e.stopPropagation();
+
+                      deleteTask(t.id);
+                    }}
+                    style={
+                      styles.deleteButton
+                    }
                     title="Delete Task"
                   >
                     ✕
@@ -203,23 +305,30 @@ function Tasks() {
         </table>
       </div>
 
-      {/* Pagination */}
       <div style={styles.pagination}>
         <button
           disabled={page === 1}
-          onClick={() => setPage((p) => p - 1)}
+          onClick={() =>
+            setPage((p) => p - 1)
+          }
           style={styles.pageButton}
         >
           Prev
         </button>
 
         <span style={styles.pageText}>
-          Page {page} of {totalPages || 1}
+          Page {page} of{" "}
+          {totalPages || 1}
         </span>
 
         <button
-          disabled={page === totalPages || totalPages === 0}
-          onClick={() => setPage((p) => p + 1)}
+          disabled={
+            page === totalPages ||
+            totalPages === 0
+          }
+          onClick={() =>
+            setPage((p) => p + 1)
+          }
           style={styles.pageButton}
         >
           Next
@@ -314,7 +423,8 @@ const styles = {
     backgroundColor: "white",
     borderRadius: "18px",
     overflow: "hidden",
-    boxShadow: "0 10px 30px rgba(0,0,0,0.06)",
+    boxShadow:
+      "0 10px 30px rgba(0,0,0,0.06)",
   },
 
   table: {
@@ -328,23 +438,28 @@ const styles = {
     backgroundColor: "#f9fafb",
     color: "#374151",
     fontSize: "0.9rem",
-    borderBottom: "1px solid #e5e7eb",
+    borderBottom:
+      "1px solid #e5e7eb",
   },
 
   td: {
     padding: "18px",
-    borderBottom: "1px solid #f1f5f9",
+    borderBottom:
+      "1px solid #f1f5f9",
     color: "#111827",
   },
 
   row: {
-    transition: "background-color 0.15s ease",
+    transition:
+      "background-color .15s ease",
+    cursor: "pointer",
   },
 
   statusSelect: {
     padding: "8px 10px",
     borderRadius: "8px",
-    border: "1px solid #d1d5db",
+    border:
+      "1px solid #d1d5db",
   },
 
   deleteButton: {
