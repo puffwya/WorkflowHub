@@ -140,6 +140,30 @@ public class TasksController : ControllerBase
         return Ok(new { items = tasks, totalCount, page, pageSize });
     }
 
+    [HttpGet("{id}")]
+    public async Task<IActionResult> GetTask(Guid id)
+    {
+        var task = await _context.Tasks
+            .Where(t => t.Id == id)
+            .Select(t => new TaskDto
+            {
+                Id = t.Id,
+                Title = t.Title,
+                Description = t.Description,
+                DueDate = t.DueDate,
+                ProjectId = t.ProjectId,
+                AssignedUserId = t.AssignedUserId,
+                Status = t.Status,
+                Priority = t.Priority
+            })
+            .FirstOrDefaultAsync();
+
+        if (task == null)
+            return NotFound();
+
+        return Ok(task);
+    }
+
     [HttpGet("user/{userId}")]
     public async Task<IActionResult> GetTasksByUser(Guid userId)
     {
