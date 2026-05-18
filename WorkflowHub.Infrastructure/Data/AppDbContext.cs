@@ -17,6 +17,7 @@ public class AppDbContext : DbContext
     public DbSet<Comment> Comments => Set<Comment>();
     public DbSet<ProjectUser> ProjectUsers { get; set; }
     public DbSet<ActivityLog> ActivityLogs => Set<ActivityLog>();
+    public DbSet<TaskStatusChangeRequest> TaskStatusChangeRequests { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -36,10 +37,39 @@ public class AppDbContext : DbContext
             .HasForeignKey(pu => pu.UserId);
 
         modelBuilder.Entity<ActivityLog>()
-            .HasOne<TaskItem>()
+            .HasOne(a => a.Task)
             .WithMany()
             .HasForeignKey(a => a.TaskId)
             .OnDelete(DeleteBehavior.SetNull);
+
+        modelBuilder.Entity<ActivityLog>()
+            .HasOne(a => a.Project)
+            .WithMany()
+            .HasForeignKey(a => a.ProjectId)
+            .OnDelete(DeleteBehavior.SetNull);
+
+        modelBuilder.Entity<ActivityLog>()
+            .HasOne(a => a.User)
+            .WithMany()
+            .HasForeignKey(a => a.UserId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        modelBuilder.Entity<TaskStatusChangeRequest>()
+            .HasOne(r => r.Task)
+            .WithMany(t => t.StatusRequests)
+            .HasForeignKey(r => r.TaskId);
+
+        modelBuilder.Entity<TaskStatusChangeRequest>()
+            .HasOne(r => r.RequestedByUser)
+            .WithMany()
+            .HasForeignKey(r => r.RequestedByUserId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        modelBuilder.Entity<TaskStatusChangeRequest>()
+            .HasOne(r => r.ReviewedByUser)
+            .WithMany()
+            .HasForeignKey(r => r.ReviewedByUserId)
+            .OnDelete(DeleteBehavior.Restrict);
 
         var utcConverter = new ValueConverter<DateTime, DateTime>(
             v => v.ToUniversalTime(),

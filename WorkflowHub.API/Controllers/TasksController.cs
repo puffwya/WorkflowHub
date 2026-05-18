@@ -8,7 +8,6 @@ using WorkflowHub.Domain.Entities;
 using WorkflowHub.API.DTOs;
 using WorkflowHub.Domain.Constants;
 using WorkflowHub.Domain.Enums;
-using WorkflowHub.Application.Services;
 
 using TaskStatus = WorkflowHub.Domain.Enums.TaskStatus;
 
@@ -30,6 +29,9 @@ public class TasksController : ControllerBase
         _activityLogService = activityLogService;
     }
 
+    // =========================
+    // CREATE TASK
+    // =========================
     [HttpPost]
     public async Task<IActionResult> CreateTask(CreateTaskRequest request)
     {
@@ -61,17 +63,12 @@ public class TasksController : ControllerBase
                 return BadRequest("Assigned user does not exist");
         }
 
-        var dueDateUtc =
-            request.DueDate.Kind == DateTimeKind.Utc
-                ? request.DueDate
-                : DateTime.SpecifyKind(request.DueDate, DateTimeKind.Utc);
-
         var task = new TaskItem
         {
             Id = Guid.NewGuid(),
             Title = request.Title,
             Description = request.Description,
-            DueDate = dueDateUtc,
+            DueDate = DateTime.SpecifyKind(request.DueDate, DateTimeKind.Utc),
             ProjectId = request.ProjectId,
             AssignedUserId = request.AssignedUserId,
             Status = TaskStatus.ToDo,
@@ -81,19 +78,12 @@ public class TasksController : ControllerBase
         _context.Tasks.Add(task);
         await _context.SaveChangesAsync();
 
-        return Ok(new TaskDto
-        {
-            Id = task.Id,
-            Title = task.Title,
-            Description = task.Description,
-            DueDate = task.DueDate,
-            ProjectId = task.ProjectId,
-            AssignedUserId = task.AssignedUserId,
-            Status = task.Status,
-            Priority = task.Priority
-        });
+        return Ok(task);
     }
 
+    // =========================
+    // GET TASKS
+    // =========================
     [HttpGet]
     public async Task<IActionResult> GetTasks(
         [FromQuery] TaskStatus? status,
@@ -140,6 +130,9 @@ public class TasksController : ControllerBase
         return Ok(new { items = tasks, totalCount, page, pageSize });
     }
 
+    // =========================
+    // GET SINGLE TASK
+    // =========================
     [HttpGet("{id}")]
     public async Task<IActionResult> GetTask(Guid id)
     {
@@ -164,99 +157,177 @@ public class TasksController : ControllerBase
         return Ok(task);
     }
 
-    [HttpGet("user/{userId}")]
-    public async Task<IActionResult> GetTasksByUser(Guid userId)
+    // =========================
+    // CREATE STATUS CHANGE REQUEST
+    // =========================
+    [HttpPost("{taskId}/status-request")]
+    public async Task<IActionResult> CreateStatusRequest(Guid taskId, [FromBody] TaskStatus requestedStatus)
     {
-        var tasks = await _context.Tasks
-            .Where(t => t.AssignedUserId == userId)
-            .Select(t => new TaskDto
-            {
-                Id = t.Id,
-                Title = t.Title,
-                Description = t.Description,
-                DueDate = t.DueDate,
-                ProjectId = t.ProjectId,
-                AssignedUserId = t.AssignedUserId,
-                Status = t.Status,
-                Priority = t.Priority
-            })
-            .ToListAsync();
+        var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
 
-        return Ok(tasks);
-    }
+        if (userId == null)
+            return Unauthorized();
 
-    [HttpGet("project/{projectId}")]
-    public async Task<IActionResult> GetTasksByProject(Guid projectId)
-    {
-        var tasks = await _context.Tasks
-            .Where(t => t.ProjectId == projectId)
-            .Select(t => new TaskDto
-            {
-                Id = t.Id,
-                Title = t.Title,
-                Description = t.Description,
-                DueDate = t.DueDate,
-                ProjectId = t.ProjectId,
-                AssignedUserId = t.AssignedUserId,
-                Status = t.Status,
-                Priority = t.Priority
-            })
-            .ToListAsync();
-
-        return Ok(tasks);
-    }
-
-    [HttpPut("{id}/status")]
-    public async Task<IActionResult> UpdateStatus(Guid id, TaskStatus status)
-    {
-        var task = await _context.Tasks.FindAsync(id);
+        var task = await _context.Tasks
+            .Include(t => t.Project)
+                .ThenInclude(p => p.ProjectUsers)
+            .FirstOrDefaultAsync(t => t.Id == taskId);
 
         if (task == null)
             return NotFound();
 
-        var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-        var role = User.FindFirst(ClaimTypes.Role)?.Value;
+        var uid = Guid.Parse(userId);
 
-        if (userId == null || role == null)
-            return Unauthorized();
+        bool inProject =
+            task.Project.OwnerId == uid ||
+            task.Project.ProjectUsers.Any(pu => pu.UserId == uid);
 
-        if (role == Roles.Employee)
+        if (!inProject)
             return Forbid();
 
-        try
+        var request = new TaskStatusChangeRequest
         {
-            TaskWorkflowService.EnforceTransition(task.Status, status, role);
-        }
-        catch (InvalidOperationException ex)
-        {
-            return BadRequest(ex.Message);
-        }
+            Id = Guid.NewGuid(),
+            TaskId = taskId,
+            RequestedByUserId = uid,
+            RequestedStatus = requestedStatus,
+            Status = RequestStatus.Pending,
+            CreatedAt = DateTime.UtcNow
+        };
 
-        var oldStatus = task.Status;
-        task.Status = status;
+        _context.TaskStatusChangeRequests.Add(request);
+        await _context.SaveChangesAsync();
+
+        return Ok(request);
+    }
+
+    [HttpGet("{taskId}/status-requests")]
+    public async Task<IActionResult> GetStatusRequests(Guid taskId)
+    {
+        var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+        if (userId == null)
+            return Unauthorized();
+
+        var uid = Guid.Parse(userId);
+
+        var task = await _context.Tasks
+            .Include(t => t.Project)
+                .ThenInclude(p => p.ProjectUsers)
+            .FirstOrDefaultAsync(t => t.Id == taskId);
+
+        if (task == null)
+            return NotFound();
+
+        bool inProject =
+            task.Project.OwnerId == uid ||
+            task.Project.ProjectUsers.Any(pu => pu.UserId == uid);
+
+        if (!inProject)
+            return Forbid();
+
+        var requests = await _context.TaskStatusChangeRequests
+            .Where(r => r.TaskId == taskId)
+            .OrderByDescending(r => r.CreatedAt)
+            .Select(r => new
+            {
+                r.Id,
+                r.TaskId,
+                r.RequestedStatus,
+                r.Status,
+                r.CreatedAt,
+                r.RequestedByUserId
+            })
+            .ToListAsync();
+
+        return Ok(requests);
+    }
+
+    // =========================
+    // APPROVE REQUEST
+    // =========================
+    [HttpPost("status-requests/{requestId}/approve")]
+    public async Task<IActionResult> ApproveRequest(Guid requestId)
+    {
+        var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+        if (userId == null)
+            return Unauthorized();
+
+        var request = await _context.TaskStatusChangeRequests
+            .Include(r => r.Task)
+                .ThenInclude(t => t.Project)
+                    .ThenInclude(p => p.ProjectUsers)
+            .FirstOrDefaultAsync(r => r.Id == requestId);
+
+        if (request == null)
+            return NotFound();
+
+        var uid = Guid.Parse(userId);
+        var project = request.Task.Project;
+
+        bool inProject =
+            project.OwnerId == uid ||
+            project.ProjectUsers.Any(pu => pu.UserId == uid);
+
+        if (!inProject)
+            return Forbid();
+
+        request.Status = RequestStatus.Approved;
+        request.Task.Status = request.RequestedStatus;
+
+        await _activityLogService.LogAsync(
+            action: "TaskStatusApproved",
+            details: $"Task {request.TaskId} set to {request.RequestedStatus}",
+            userId: uid,
+            taskId: request.TaskId
+        );
 
         await _context.SaveChangesAsync();
 
-        await _activityLogService.LogAsync(
-            action: "TaskStatusChanged",
-            details: $"Status changed from {oldStatus} to {status}",
-            userId: Guid.Parse(userId),
-            taskId: task.Id
-        );
-
-        return Ok(new TaskDto
-        {
-            Id = task.Id,
-            Title = task.Title,
-            Description = task.Description,
-            DueDate = task.DueDate,
-            ProjectId = task.ProjectId,
-            AssignedUserId = task.AssignedUserId,
-            Status = task.Status,
-            Priority = task.Priority
-        });
+        return Ok(request);
     }
 
+    // =========================
+    // REJECT REQUEST
+    // =========================
+    [HttpPost("status-requests/{requestId}/reject")]
+    public async Task<IActionResult> RejectRequest(Guid requestId)
+    {
+        var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+        if (userId == null)
+            return Unauthorized();
+
+        var request = await _context.TaskStatusChangeRequests
+            .Include(r => r.Task)
+                .ThenInclude(t => t.Project)
+                    .ThenInclude(p => p.ProjectUsers)
+            .FirstOrDefaultAsync(r => r.Id == requestId);
+
+        if (request == null)
+            return NotFound();
+
+        var uid = Guid.Parse(userId);
+        var project = request.Task.Project;
+
+        bool inProject =
+            project.OwnerId == uid ||
+            project.ProjectUsers.Any(pu => pu.UserId == uid);
+
+        if (!inProject)
+            return Forbid();
+
+        request.Status = RequestStatus.Rejected;
+
+        await _context.SaveChangesAsync();
+
+        return Ok(request);
+    }
+
+    // =========================
+    // DELETE TASK
+    // =========================
     [HttpDelete("{id}")]
     public async Task<IActionResult> DeleteTask(Guid id)
     {
@@ -266,7 +337,7 @@ public class TasksController : ControllerBase
         if (userId == null || role == null)
             return Unauthorized();
 
-        var userGuid = Guid.Parse(userId);
+        var uid = Guid.Parse(userId);
 
         var task = await _context.Tasks
             .Include(t => t.Project)
@@ -275,24 +346,16 @@ public class TasksController : ControllerBase
         if (task == null)
             return NotFound();
 
-        if (task.Project == null)
-            return BadRequest("Task project relationship missing");
-
         if (task.Project.IsArchived)
             return BadRequest("Cannot modify archived project");
 
-        if (role == Roles.Employee)
-            return Forbid();
-
-        var ownsProject = task.Project.OwnerId == userGuid;
-
-        if (role != Roles.Admin && !ownsProject)
+        if (role == Roles.Employee && task.Project.OwnerId != uid)
             return Forbid();
 
         await _activityLogService.LogAsync(
             action: "TaskDeleted",
             details: $"Deleted task '{task.Title}'",
-            userId: userGuid,
+            userId: uid,
             taskId: task.Id
         );
 
