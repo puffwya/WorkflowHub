@@ -318,13 +318,14 @@ public class TasksController : ControllerBase
         var project = task.Project;
 
         bool isAdmin = role == Roles.Admin;
-        bool isOwner = project.OwnerId == uid;
-        bool isMember = project.ProjectUsers.Any(pu => pu.UserId == uid);
 
-        // allow admin OR project members OR assigned user
-        bool isAssigned = task.AssignedUserId == uid;
+        var projectUser = task.Project.ProjectUsers
+            .FirstOrDefault(pu => pu.UserId == uid);
 
-        if (!isAdmin && !isOwner && !isMember && !isAssigned)
+        bool isOwner = task.Project.OwnerId == uid;
+        bool isManager = projectUser?.Role == ProjectRole.Manager;
+
+        if (!isAdmin && !isOwner && !isManager)
             return Forbid();
 
         task.Status = status;
@@ -357,11 +358,15 @@ public class TasksController : ControllerBase
         var uid = Guid.Parse(userId);
         var project = request.Task.Project;
 
-        bool inProject =
-            project.OwnerId == uid ||
-            project.ProjectUsers.Any(pu => pu.UserId == uid);
+        bool isAdmin = role == Roles.Admin;
 
-        if (!inProject)
+        var projectUser = request.Task.Project.ProjectUsers
+            .FirstOrDefault(pu => pu.UserId == uid);
+
+        bool isOwner = request.Task.Project.OwnerId == uid;
+        bool isManager = projectUser?.Role == ProjectRole.Manager;
+
+        if (!isAdmin && !isOwner && !isManager)
             return Forbid();
 
         // apply task change
@@ -416,11 +421,15 @@ public class TasksController : ControllerBase
         var uid = Guid.Parse(userId);
         var project = request.Task.Project;
 
-        bool inProject =
-            project.OwnerId == uid ||
-            project.ProjectUsers.Any(pu => pu.UserId == uid);
+        bool isAdmin = role == Roles.Admin;
 
-        if (!inProject)
+        var projectUser = request.Task.Project.ProjectUsers
+            .FirstOrDefault(pu => pu.UserId == uid);
+
+        bool isOwner = request.Task.Project.OwnerId == uid;
+        bool isManager = projectUser?.Role == ProjectRole.Manager;
+
+        if (!isAdmin && !isOwner && !isManager)
             return Forbid();
 
         request.Status = RequestStatus.Rejected;
