@@ -1,13 +1,13 @@
 {
   "files": {
     "main.css": "/WorkflowHub/static/css/main.a5e54658.css",
-    "main.js": "/WorkflowHub/static/js/main.0d7bfaeb.js",
+    "main.js": "/WorkflowHub/static/js/main.24531f7f.js",
     "index.html": "/WorkflowHub/index.html",
     "main.a5e54658.css.map": "/WorkflowHub/static/css/main.a5e54658.css.map",
-    "main.0d7bfaeb.js.map": "/WorkflowHub/static/js/main.0d7bfaeb.js.map"
+    "main.24531f7f.js.map": "/WorkflowHub/static/js/main.24531f7f.js.map"
   },
   "entrypoints": [
     "static/css/main.a5e54658.css",
-    "static/js/main.0d7bfaeb.js"
+    "static/js/main.24531f7f.js"
   ]
 }
