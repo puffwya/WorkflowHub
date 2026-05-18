@@ -294,6 +294,47 @@ public class TasksController : ControllerBase
     }
 
     // =========================
+    // UPDATE TASK STATUS (DIRECT)
+    // =========================
+    [HttpPut("{id}/status")]
+    public async Task<IActionResult> UpdateTaskStatus(Guid id, [FromQuery] TaskStatus status)
+    {
+        var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        var role = User.FindFirst(ClaimTypes.Role)?.Value;
+
+        if (userId == null)
+            return Unauthorized();
+
+        var uid = Guid.Parse(userId);
+
+        var task = await _context.Tasks
+            .Include(t => t.Project)
+                .ThenInclude(p => p.ProjectUsers)
+            .FirstOrDefaultAsync(t => t.Id == id);
+
+        if (task == null)
+            return NotFound();
+
+        var project = task.Project;
+
+        bool isAdmin = role == Roles.Admin;
+        bool isOwner = project.OwnerId == uid;
+        bool isMember = project.ProjectUsers.Any(pu => pu.UserId == uid);
+
+        // allow admin OR project members OR assigned user
+        bool isAssigned = task.AssignedUserId == uid;
+
+        if (!isAdmin && !isOwner && !isMember && !isAssigned)
+            return Forbid();
+
+        task.Status = status;
+
+        await _context.SaveChangesAsync();
+
+        return Ok(task);
+    }
+
+    // =========================
     // APPROVE REQUEST
     // =========================
     [HttpPost("status-requests/{requestId}/approve")]

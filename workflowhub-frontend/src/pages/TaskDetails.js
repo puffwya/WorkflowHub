@@ -13,8 +13,6 @@ function TaskDetails() {
   const [task, setTask] = useState(null);
   const [comments, setComments] = useState([]);
   const [commentText, setCommentText] = useState("");
-
-  // status requests
   const [requests, setRequests] = useState([]);
 
   const fetchTask = useCallback(async () => {
@@ -35,15 +33,12 @@ function TaskDetails() {
     }
   }, [id]);
 
-  // fetch requests
   const fetchRequests = useCallback(async () => {
     try {
-      const res = await apiClient.get(
-        `/tasks/${id}/status-requests`
-      );
+      const res = await apiClient.get(`/tasks/${id}/status-requests`);
       setRequests(res.data);
     } catch (err) {
-      console.error("Failed to load requests", err);
+      console.error("Failed to load status requests", err);
     }
   }, [id]);
 
@@ -53,20 +48,13 @@ function TaskDetails() {
     fetchRequests();
   }, [fetchTask, fetchComments, fetchRequests]);
 
-  const refreshAll = () => {
-    fetchTask();
-    fetchComments();
-    fetchRequests();
-  };
-
   const addComment = async () => {
     if (!commentText.trim()) return;
 
     try {
-      await apiClient.post(
-        `/tasks/${id}/comments`,
-        { content: commentText }
-      );
+      await apiClient.post(`/tasks/${id}/comments`, {
+        content: commentText,
+      });
 
       setCommentText("");
       fetchComments();
@@ -76,28 +64,27 @@ function TaskDetails() {
     }
   };
 
-  // approve request
   const approveRequest = async (requestId) => {
     try {
       await apiClient.post(
         `/tasks/status-requests/${requestId}/approve`
       );
 
-      refreshAll();
+      fetchTask();
+      fetchRequests();
     } catch (err) {
       console.error("Approve failed", err);
       alert("Failed to approve request");
     }
   };
 
-  // reject request
   const rejectRequest = async (requestId) => {
     try {
       await apiClient.post(
         `/tasks/status-requests/${requestId}/reject`
       );
 
-      refreshAll();
+      fetchRequests();
     } catch (err) {
       console.error("Reject failed", err);
       alert("Failed to reject request");
@@ -105,16 +92,11 @@ function TaskDetails() {
   };
 
   if (!task) {
-    return (
-      <div style={styles.loading}>
-        Loading task...
-      </div>
-    );
+    return <div style={styles.loading}>Loading task...</div>;
   }
 
   return (
     <div style={styles.page}>
-      {/* TASK INFO */}
       <div style={styles.card}>
         <h1>{task.title}</h1>
         <p>{task.description}</p>
@@ -128,83 +110,60 @@ function TaskDetails() {
         </div>
       </div>
 
-      {/* STATUS REQUESTS */}
+      {/* ========================= */}
+      {/* STATUS CHANGE REQUESTS */}
+      {/* ========================= */}
       <div style={styles.card}>
         <h2>Status Change Requests</h2>
 
         {requests.length === 0 ? (
-          <p>No requests yet</p>
+          <p>No pending requests</p>
         ) : (
           requests.map((r) => (
-            <div
-              key={r.id}
-              style={{
-                padding: "12px",
-                borderBottom: "1px solid #e5e7eb"
-              }}
-            >
+            <div key={r.id} style={styles.request}>
               <div>
-                Requested Status:{" "}
-                <strong>{r.requestedStatus}</strong>
+                <strong>Requested Status:</strong> {r.requestedStatus}
               </div>
 
               <div>
-                Status: <strong>{r.status}</strong>
+                <strong>Status:</strong> {r.status}
               </div>
 
-              {r.status === "Pending" && (
-                <div style={{ marginTop: "10px" }}>
-                  <button
-                    onClick={() => approveRequest(r.id)}
-                    style={{
-                      marginRight: "10px",
-                      padding: "8px 12px",
-                      background: "#16a34a",
-                      color: "white",
-                      border: "none",
-                      borderRadius: "8px"
-                    }}
-                  >
-                    Approve
-                  </button>
+              <div style={styles.requestButtons}>
+                <button
+                  style={styles.approveBtn}
+                  onClick={() => approveRequest(r.id)}
+                >
+                  Approve
+                </button>
 
-                  <button
-                    onClick={() => rejectRequest(r.id)}
-                    style={{
-                      padding: "8px 12px",
-                      background: "#dc2626",
-                      color: "white",
-                      border: "none",
-                      borderRadius: "8px"
-                    }}
-                  >
-                    Reject
-                  </button>
-                </div>
-              )}
+                <button
+                  style={styles.rejectBtn}
+                  onClick={() => rejectRequest(r.id)}
+                >
+                  Reject
+                </button>
+              </div>
             </div>
           ))
         )}
       </div>
 
+      {/* ========================= */}
       {/* COMMENTS */}
+      {/* ========================= */}
       <div style={styles.card}>
         <h2>Comments</h2>
 
         <div style={styles.commentInput}>
           <textarea
             value={commentText}
-            onChange={(e) =>
-              setCommentText(e.target.value)
-            }
+            onChange={(e) => setCommentText(e.target.value)}
             placeholder="Write a comment..."
             style={styles.textarea}
           />
 
-          <button
-            onClick={addComment}
-            style={styles.button}
-          >
+          <button onClick={addComment} style={styles.button}>
             Add Comment
           </button>
         </div>
@@ -213,10 +172,7 @@ function TaskDetails() {
           <p>No comments yet</p>
         ) : (
           comments.map((c) => (
-            <div
-              key={c.id}
-              style={styles.comment}
-            >
+            <div key={c.id} style={styles.comment}>
               <div>{c.content}</div>
               <small>
                 {new Date(c.createdAt).toLocaleString()}
@@ -235,6 +191,7 @@ const styles = {
     backgroundColor: "#f4f7fb",
     minHeight: "100vh",
   },
+
   card: {
     background: "white",
     padding: "30px",
@@ -242,21 +199,25 @@ const styles = {
     marginBottom: "24px",
     boxShadow: "0 10px 30px rgba(0,0,0,0.06)",
   },
+
   meta: {
     marginTop: "10px",
   },
+
   commentInput: {
     display: "flex",
     flexDirection: "column",
     gap: "12px",
     marginBottom: "25px",
   },
+
   textarea: {
     minHeight: "90px",
     padding: "12px",
     borderRadius: "10px",
     border: "1px solid #d1d5db",
   },
+
   button: {
     width: "fit-content",
     padding: "12px 18px",
@@ -267,12 +228,45 @@ const styles = {
     cursor: "pointer",
     fontWeight: 600,
   },
+
   comment: {
     padding: "14px",
     borderBottom: "1px solid #e5e7eb",
   },
+
   loading: {
     padding: "40px",
+  },
+
+  request: {
+    padding: "12px",
+    border: "1px solid #e5e7eb",
+    borderRadius: "10px",
+    marginBottom: "12px",
+  },
+
+  requestButtons: {
+    display: "flex",
+    gap: "10px",
+    marginTop: "10px",
+  },
+
+  approveBtn: {
+    backgroundColor: "#16a34a",
+    color: "white",
+    border: "none",
+    padding: "8px 12px",
+    borderRadius: "8px",
+    cursor: "pointer",
+  },
+
+  rejectBtn: {
+    backgroundColor: "#dc2626",
+    color: "white",
+    border: "none",
+    padding: "8px 12px",
+    borderRadius: "8px",
+    cursor: "pointer",
   },
 };
 
