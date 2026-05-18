@@ -364,8 +364,11 @@ public class TasksController : ControllerBase
         if (!inProject)
             return Forbid();
 
-        request.Status = RequestStatus.Approved;
+        // apply task change
         request.Task.Status = request.RequestedStatus;
+
+        // mark request complete
+        request.Status = RequestStatus.Approved;
 
         await _activityLogService.LogAsync(
             action: "TaskStatusApproved",
@@ -374,9 +377,20 @@ public class TasksController : ControllerBase
             taskId: request.TaskId
         );
 
+        // persist task change first
         await _context.SaveChangesAsync();
 
-        return Ok(request);
+        // remove noise from UI
+        _context.TaskStatusChangeRequests.Remove(request);
+        await _context.SaveChangesAsync();
+
+        return Ok(new
+        {
+            requestId,
+            taskId = request.TaskId,
+            newStatus = request.RequestedStatus,
+            status = "Approved"
+        });
     }
 
     // =========================
@@ -413,7 +427,15 @@ public class TasksController : ControllerBase
 
         await _context.SaveChangesAsync();
 
-        return Ok(request);
+        // remove after reject
+        _context.TaskStatusChangeRequests.Remove(request);
+        await _context.SaveChangesAsync();
+
+        return Ok(new
+        {
+            requestId,
+            status = "Rejected"
+        });
     }
 
     // =========================
