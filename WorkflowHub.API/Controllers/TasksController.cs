@@ -158,6 +158,56 @@ public class TasksController : ControllerBase
     }
 
     // =========================
+    // GET TASKS BY PROJECT
+    // =========================
+    [HttpGet("project/{projectId}")]
+    public async Task<IActionResult> GetTasksByProject(Guid projectId)
+    {
+        var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        var role = User.FindFirst(ClaimTypes.Role)?.Value;
+
+        if (userId == null)
+            return Unauthorized();
+
+        var uid = Guid.Parse(userId);
+
+        var project = await _context.Projects
+            .Include(p => p.ProjectUsers)
+            .FirstOrDefaultAsync(p => p.Id == projectId);
+
+        if (project == null)
+            return NotFound();
+
+        // ADMIN CAN SEE EVERYTHING
+        bool isAdmin = role == Roles.Admin;
+
+        // OWNER OR MEMBER OF PROJECT
+        bool isOwner = project.OwnerId == uid;
+
+        bool isMember = project.ProjectUsers.Any(pu => pu.UserId == uid);
+
+        if (!isAdmin && !isOwner && !isMember)
+            return Forbid();
+
+        var tasks = await _context.Tasks
+            .Where(t => t.ProjectId == projectId)
+            .Select(t => new TaskDto
+            {
+                Id = t.Id,
+                Title = t.Title,
+                Description = t.Description,
+                DueDate = t.DueDate,
+                ProjectId = t.ProjectId,
+                AssignedUserId = t.AssignedUserId,
+                Status = t.Status,
+                Priority = t.Priority
+            })
+            .ToListAsync();
+
+        return Ok(tasks);
+    }
+
+    // =========================
     // CREATE STATUS CHANGE REQUEST
     // =========================
     [HttpPost("{taskId}/status-request")]
