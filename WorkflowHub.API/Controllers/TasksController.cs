@@ -315,17 +315,13 @@ public class TasksController : ControllerBase
         if (task == null)
             return NotFound();
 
-        var project = task.Project;
-
         bool isAdmin = role == Roles.Admin;
-
-        var projectUser = task.Project.ProjectUsers
-            .FirstOrDefault(pu => pu.UserId == uid);
+        bool isManager = role == Roles.Manager;
 
         bool isOwner = task.Project.OwnerId == uid;
-        bool isManager = projectUser?.Role == ProjectRole.Manager;
+        bool isProjectMember = task.Project.ProjectUsers.Any(pu => pu.UserId == uid);
 
-        if (!isAdmin && !isOwner && !isManager)
+        if (!isAdmin && !isOwner && !(isManager && isProjectMember))
             return Forbid();
 
         task.Status = status;
@@ -342,6 +338,7 @@ public class TasksController : ControllerBase
     public async Task<IActionResult> ApproveRequest(Guid requestId)
     {
         var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        var role = User.FindFirst(ClaimTypes.Role)?.Value;
 
         if (userId == null)
             return Unauthorized();
@@ -359,14 +356,12 @@ public class TasksController : ControllerBase
         var project = request.Task.Project;
 
         bool isAdmin = role == Roles.Admin;
+        bool isManager = role == Roles.Manager;
 
-        var projectUser = request.Task.Project.ProjectUsers
-            .FirstOrDefault(pu => pu.UserId == uid);
+        bool isOwner = project.OwnerId == uid;
+        bool isProjectMember = project.ProjectUsers.Any(pu => pu.UserId == uid);
 
-        bool isOwner = request.Task.Project.OwnerId == uid;
-        bool isManager = projectUser?.Role == ProjectRole.Manager;
-
-        if (!isAdmin && !isOwner && !isManager)
+        if (!isAdmin && !isOwner && !(isManager && isProjectMember))
             return Forbid();
 
         // apply task change
@@ -405,6 +400,7 @@ public class TasksController : ControllerBase
     public async Task<IActionResult> RejectRequest(Guid requestId)
     {
         var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        var role = User.FindFirst(ClaimTypes.Role)?.Value;
 
         if (userId == null)
             return Unauthorized();
@@ -422,14 +418,12 @@ public class TasksController : ControllerBase
         var project = request.Task.Project;
 
         bool isAdmin = role == Roles.Admin;
-
-        var projectUser = request.Task.Project.ProjectUsers
-            .FirstOrDefault(pu => pu.UserId == uid);
-
-        bool isOwner = request.Task.Project.OwnerId == uid;
-        bool isManager = projectUser?.Role == ProjectRole.Manager;
-
-        if (!isAdmin && !isOwner && !isManager)
+        bool isManager = role == Roles.Manager;
+        
+        bool isOwner = project.OwnerId == uid;
+        bool isProjectMember = project.ProjectUsers.Any(pu => pu.UserId == uid);
+        
+        if (!isAdmin && !isOwner && !(isManager && isProjectMember))
             return Forbid();
 
         request.Status = RequestStatus.Rejected;
