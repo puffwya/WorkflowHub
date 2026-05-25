@@ -76,6 +76,7 @@ builder.Services.AddControllers()
 // SERVICES
 // --------------------
 builder.Services.AddScoped<ActivityLogService>();
+builder.Services.AddScoped<DailyDigestService>();
 
 // --------------------
 // SWAGGER
