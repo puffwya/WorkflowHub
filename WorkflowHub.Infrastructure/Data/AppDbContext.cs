@@ -18,6 +18,7 @@ public class AppDbContext : DbContext
     public DbSet<ProjectUser> ProjectUsers { get; set; }
     public DbSet<ActivityLog> ActivityLogs => Set<ActivityLog>();
     public DbSet<TaskStatusChangeRequest> TaskStatusChangeRequests { get; set; }
+    public DbSet<DailyDigest> DailyDigests { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

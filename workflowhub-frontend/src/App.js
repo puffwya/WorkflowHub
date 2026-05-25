@@ -16,6 +16,7 @@ import TasksPage from "./pages/TasksPage";
 import TaskDetails from "./pages/TaskDetails";
 import TaskCreatePage from "./pages/TaskCreatePage";
 import AdminUsers from "./components/AdminUsers";
+import DailyDigests from "./pages/DailyDigests";
 
 console.log(process.env.REACT_APP_API_URL);
 
@@ -89,6 +90,15 @@ function App() {
           path="admin/users"
           element={
             getUserRole() === "Admin" ? <AdminUsers /> : <Navigate to="/dashboard" />
+          }
+        />
+
+        <Route
+          path="/admin/digests"
+          element={
+            getUserRole() === "Admin"
+              ? <DailyDigests />
+              : <Navigate to="/dashboard" />
           }
         />
 
