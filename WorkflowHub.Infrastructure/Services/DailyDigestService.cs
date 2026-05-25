@@ -15,6 +15,7 @@ public class DailyDigestService
         _context = context;
     }
 
+    // GENERATE + SAVE DIGEST
     public async Task<DailyDigest> Generate()
     {
         var totalTasks = await _context.Tasks.CountAsync();
@@ -29,19 +30,20 @@ public class DailyDigestService
 
         var totalProjects = await _context.Projects.CountAsync();
 
-        // Convert to EST safely
-        var est = TimeZoneInfo.FindSystemTimeZoneById(
-            OperatingSystem.IsWindows()
-                ? "Eastern Standard Time"
-                : "America/New_York"
-        );
+        // EST TIME COVERSION
+        var timeZoneId = OperatingSystem.IsWindows()
+            ? "Eastern Standard Time"
+            : "America/New_York";
+
+        var est = TimeZoneInfo.FindSystemTimeZoneById(timeZoneId);
 
         var estTime = TimeZoneInfo.ConvertTimeFromUtc(
             DateTime.UtcNow,
             est
         );
 
-        var content = $"""
+        var content =
+$"""
 WorkflowHub Daily Digest
 Generated: {estTime}
 
@@ -65,5 +67,13 @@ Overdue: {overdueTasks}
         await _context.SaveChangesAsync();
 
         return digest;
+    }
+
+    // GET ALL DIGESTS
+    public async Task<List<DailyDigest>> GetDigests()
+    {
+        return await _context.DailyDigests
+            .OrderByDescending(d => d.GeneratedAt)
+            .ToListAsync();
     }
 }
