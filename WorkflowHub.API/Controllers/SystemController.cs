@@ -16,50 +16,35 @@ public class SystemController : ControllerBase
         DailyDigestService dailyDigestService,
         IConfiguration configuration)
     {
-        _dailyDigestService =
-            dailyDigestService;
-
-        _configuration =
-            configuration;
+        _dailyDigestService = dailyDigestService;
+        _configuration = configuration;
     }
 
+    // GENERATE DIGEST
     [HttpPost("daily-digest")]
-    public async Task<IActionResult>
-        GenerateDigest(
-        [FromHeader(Name = "x-api-key")]
-        string? apiKey)
+    public async Task<IActionResult> GenerateDigest(
+        [FromHeader(Name = "x-api-key")] string? apiKey)
     {
-        var expectedKey =
-            _configuration["Automation:Secret"];
+        var expectedKey = _configuration["Automation:Secret"];
 
-        if (
-            string.IsNullOrEmpty(apiKey)
-            || apiKey != expectedKey
-        )
-        {
+        if (string.IsNullOrEmpty(apiKey) || apiKey != expectedKey)
             return Unauthorized();
-        }
 
-        var digest =
-            await _dailyDigestService
-                .Generate();
+        var digest = await _dailyDigestService.Generate();
 
         return Ok(new
         {
-            message =
-                "Digest generated",
-
+            message = "Digest generated",
             digest
         });
     }
+
+    // GET ALL DIGESTS
     [HttpGet("daily-digests")]
     [Authorize(Roles = Roles.Admin)]
     public async Task<IActionResult> GetDigests()
     {
-        var digests = await _context.DailyDigests
-            .OrderByDescending(d => d.GeneratedAt)
-            .ToListAsync();
-
+        var digests = await _dailyDigestService.GetDigests();
         return Ok(digests);
     }
 }
