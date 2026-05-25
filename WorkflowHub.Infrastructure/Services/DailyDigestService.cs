@@ -36,19 +36,15 @@ public class DailyDigestService
             await _context.Projects
                 .CountAsync();
 
-        var digest =
-$"""
-WorkflowHub Daily Digest
-Generated: {DateTime.UtcNow}
+        var digest = new DailyDigest
+        {
+            Id = Guid.NewGuid(),
+            GeneratedAt = estTime,
+            Content = formattedDigestString
+        };
 
-Projects: {totalProjects}
-
-Tasks: {totalTasks}
-
-Completed: {completedTasks}
-
-Overdue: {overdueTasks}
-""";
+        _context.DailyDigests.Add(digest);
+        await _context.SaveChangesAsync();
 
         return digest;
     }

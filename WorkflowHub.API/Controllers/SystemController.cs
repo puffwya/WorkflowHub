@@ -50,4 +50,14 @@ public class SystemController : ControllerBase
             digest
         });
     }
+    [HttpGet("daily-digests")]
+    [Authorize(Roles = Roles.Admin)]
+    public async Task<IActionResult> GetDigests()
+    {
+        var digests = await _context.DailyDigests
+            .OrderByDescending(d => d.GeneratedAt)
+            .ToListAsync();
+
+        return Ok(digests);
+    }
 }

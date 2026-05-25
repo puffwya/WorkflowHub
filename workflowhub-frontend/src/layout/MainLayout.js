@@ -68,7 +68,7 @@ function MainLayout() {
         }}
       >
 
-        {/* TOP CONTENT (NOW SCROLLABLE AREA) */}
+        {/* TOP CONTENT */}
         <div style={styles.scrollArea}>
 
           <div style={styles.brand}>
@@ -106,12 +106,20 @@ function MainLayout() {
               <Link to="/activity" onClick={() => setOpen(false)} style={linkStyle(isActive("/activity"))}>
                 Activity Logs
               </Link>
+
+              <Link
+                to="/admin/digests"
+                onClick={() => setOpen(false)}
+                style={linkStyle(isActive("/admin/digests"))}
+              >
+                Daily Digests
+              </Link>
             </div>
           )}
 
         </div>
 
-        {/* LOGOUT (ALWAYS VISIBLE, NEVER CUT OFF) */}
+        {/* LOGOUT */}
         <div style={styles.logoutContainer}>
           <button onClick={handleLogout} style={styles.logout}>
             Logout
