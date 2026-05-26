@@ -3,8 +3,8 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
 using WorkflowHub.Infrastructure.Data;
-using WorkflowHub.Domain.Enums;
 using WorkflowHub.Infrastructure.Services;
+using TaskStatus = WorkflowHub.Domain.Enums.TaskStatus;
 
 namespace WorkflowHub.API.Controllers;
 
@@ -41,7 +41,7 @@ public class DashboardController : ControllerBase
         return Ok(result);
     }
 
-    // AI-style dashboard report (does not use real ai for now, role-aware)
+    // AI-style dashboard report (role-aware, placeholder AI)
     [HttpGet("report")]
     public async Task<IActionResult> GetDashboardReport()
     {
