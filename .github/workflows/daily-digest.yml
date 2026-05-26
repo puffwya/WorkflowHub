@@ -2,7 +2,7 @@ name: Daily Digest Trigger
 
 on:
   schedule:
-    - cron: "0 12 * * *"
+    - cron: "10 12 * * *"
   workflow_dispatch:
 
 jobs:
@@ -12,5 +12,6 @@ jobs:
     steps:
       - name: Call WorkflowHub API
         run: |
-          curl -X POST "https://workflowhub.onrender.com/api/system/daily-digest" \
+          curl --fail -X POST \
+          "https://workflowhub.onrender.com/api/system/daily-digest" \
           -H "x-api-key: ${{ secrets.DIGEST_API_KEY }}"
