@@ -59,7 +59,7 @@ Overdue: {overdueTasks}
         var digest = new DailyDigest
         {
             Id = Guid.NewGuid(),
-            GeneratedAt = estTime,
+            GeneratedAt = DateTime.UtcNow,
             Content = content
         };
 
