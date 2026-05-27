@@ -1,5 +1,7 @@
+using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
+using Microsoft.Extensions.Configuration;
 
 namespace WorkflowHub.Infrastructure.Services;
 
@@ -7,8 +9,6 @@ public class AIService
 {
     private readonly HttpClient _httpClient;
     private readonly IConfiguration _configuration;
-
-    private const string DefaultModel = "gemini-1.5-flash-latest";
 
     public AIService(HttpClient httpClient, IConfiguration configuration)
     {
@@ -18,14 +18,17 @@ public class AIService
 
     public async Task<string> GenerateInsight(string prompt)
     {
-        var apiKey = _configuration["AI:GeminiApiKey"];
+        var apiKey = _configuration["AI:ApiKey"];
 
         if (string.IsNullOrWhiteSpace(apiKey))
+        {
             return "AI key missing.";
+        }
 
+        // Correct Gemini endpoint (IMPORTANT: key is in query string)
         var url =
             
-$"https://generativelanguage.googleapis.com/v1/models/{DefaultModel}:generateContent?key={apiKey}";
+$"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={apiKey}";
 
         var requestBody = new
         {
@@ -36,37 +39,39 @@ $"https://generativelanguage.googleapis.com/v1/models/{DefaultModel}:generateCon
                     role = "user",
                     parts = new[]
                     {
-                        new { text = prompt }
+                        new
+                        {
+                            text = prompt
+                        }
                     }
                 }
-            },
-            generationConfig = new
-            {
-                temperature = 0.7,
-                maxOutputTokens = 400
             }
         };
 
+        var json = JsonSerializer.Serialize(requestBody);
+
+        var request = new HttpRequestMessage(HttpMethod.Post, url)
+        {
+            Content = new StringContent(json, Encoding.UTF8, "application/json")
+        };
+
+        request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+
+        var response = await _httpClient.SendAsync(request);
+
+        var responseText = await response.Content.ReadAsStringAsync();
+
+        if (!response.IsSuccessStatusCode)
+        {
+            return $"AI Error: {response.StatusCode} - {responseText}";
+        }
+
+        using var doc = JsonDocument.Parse(responseText);
+
+        // Gemini response path:
+        // candidates[0].content.parts[0].text
         try
         {
-            var response = await _httpClient.PostAsync(
-                url,
-                new StringContent(
-                    JsonSerializer.Serialize(requestBody),
-                    Encoding.UTF8,
-                    "application/json"
-                )
-            );
-
-            var json = await response.Content.ReadAsStringAsync();
-
-            if (!response.IsSuccessStatusCode)
-            {
-                return $"AI Error: {response.StatusCode} - {json}";
-            }
-
-            using var doc = JsonDocument.Parse(json);
-
             return doc.RootElement
                 .GetProperty("candidates")[0]
                 .GetProperty("content")
@@ -75,9 +80,9 @@ $"https://generativelanguage.googleapis.com/v1/models/{DefaultModel}:generateCon
                 .GetString()
                 ?? "No insight generated.";
         }
-        catch (Exception ex)
+        catch
         {
-            return $"AI Exception: {ex.Message}";
+            return $"AI parse error: {responseText}";
         }
     }
 }
