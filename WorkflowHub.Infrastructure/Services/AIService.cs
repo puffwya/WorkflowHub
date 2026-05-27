@@ -43,7 +43,7 @@ public class AIService
 
         var body = new
         {
-            model = "mistralai/mistral-7b-instruct:free",
+            model = "meta-llama/llama-3.1-8b-instruct",
 
             messages = new[]
             {
