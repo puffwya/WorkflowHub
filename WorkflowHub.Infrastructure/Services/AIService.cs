@@ -1,7 +1,5 @@
-using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
-using Microsoft.Extensions.Configuration;
 
 namespace WorkflowHub.Infrastructure.Services;
 
@@ -9,6 +7,8 @@ public class AIService
 {
     private readonly HttpClient _httpClient;
     private readonly IConfiguration _configuration;
+
+    private const string DefaultModel = "gemini-1.5-flash-latest";
 
     public AIService(HttpClient httpClient, IConfiguration configuration)
     {
@@ -23,10 +23,9 @@ public class AIService
         if (string.IsNullOrWhiteSpace(apiKey))
             return "AI key missing.";
 
-        var model = "gemini-1.5-flash";
-
         var url =
-$"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={apiKey}";
+            
+$"https://generativelanguage.googleapis.com/v1/models/{DefaultModel}:generateContent?key={apiKey}";
 
         var requestBody = new
         {
@@ -48,25 +47,26 @@ $"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:gener
             }
         };
 
-        var request = new HttpRequestMessage(HttpMethod.Post, url);
-        request.Content = new StringContent(
-            JsonSerializer.Serialize(requestBody),
-            Encoding.UTF8,
-            "application/json"
-        );
-
-        var response = await _httpClient.SendAsync(request);
-        var json = await response.Content.ReadAsStringAsync();
-
-        if (!response.IsSuccessStatusCode)
-        {
-            return $"AI Error: {response.StatusCode} - {json}";
-        }
-
-        using var doc = JsonDocument.Parse(json);
-
         try
         {
+            var response = await _httpClient.PostAsync(
+                url,
+                new StringContent(
+                    JsonSerializer.Serialize(requestBody),
+                    Encoding.UTF8,
+                    "application/json"
+                )
+            );
+
+            var json = await response.Content.ReadAsStringAsync();
+
+            if (!response.IsSuccessStatusCode)
+            {
+                return $"AI Error: {response.StatusCode} - {json}";
+            }
+
+            using var doc = JsonDocument.Parse(json);
+
             return doc.RootElement
                 .GetProperty("candidates")[0]
                 .GetProperty("content")
@@ -75,9 +75,9 @@ $"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:gener
                 .GetString()
                 ?? "No insight generated.";
         }
-        catch
+        catch (Exception ex)
         {
-            return $"AI parse error: {json}";
+            return $"AI Exception: {ex.Message}";
         }
     }
 }
