@@ -67,7 +67,10 @@ public class AIService
 
         if (!response.IsSuccessStatusCode)
         {
-            return "Failed to generate AI report.";
+            var errorText =
+                await response.Content.ReadAsStringAsync();
+
+            return $"AI Error: {response.StatusCode} - {errorText}";
         }
 
         var json =
