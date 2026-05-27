@@ -92,7 +92,6 @@ Be encouraging and actionable.
 Use markdown.
 """;
 
-        return await _aiService
-            .GenerateInsight(prompt);
+        return await _aiService.GenerateDashboardReport(userId, role, taskJson);
     }
 }
