@@ -15,7 +15,7 @@ public class AIService
 
     public async Task<string> GenerateInsight(string prompt)
     {
-        var apiKey = Environment.GetEnvironmentVariable("OPENAI_API_KEY");
+        var apiKey = Environment.GetEnvironmentVariable("AI__OpenAIKey");
 
         if (string.IsNullOrWhiteSpace(apiKey))
             return "AI key missing.";
