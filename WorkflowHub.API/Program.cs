@@ -76,9 +76,16 @@ builder.Services.AddControllers()
 // SERVICES
 // --------------------
 builder.Services.AddScoped<ActivityLogService>();
+
 builder.Services.AddScoped<DailyDigestService>();
+
 builder.Services.AddScoped<DashboardInsightService>();
+
 builder.Services.AddHttpClient<AIService>();
+builder.Services.AddMemoryCache();
+builder.Services.AddHttpClient<OpenAIProvider>();
+builder.Services.AddScoped<IAIProvider, OpenAIProvider>();
+builder.Services.AddScoped<AIService>();
 
 // --------------------
 // SWAGGER

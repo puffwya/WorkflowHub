@@ -1,88 +1,31 @@
-using System.Net.Http.Headers;
-using System.Text;
-using System.Text.Json;
-using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Caching.Memory;
 
 namespace WorkflowHub.Infrastructure.Services;
 
 public class AIService
 {
-    private readonly HttpClient _httpClient;
-    private readonly IConfiguration _configuration;
+    private readonly IAIProvider _provider;
+    private readonly IMemoryCache _cache;
 
-    public AIService(HttpClient httpClient, IConfiguration configuration)
+    public AIService(IAIProvider provider, IMemoryCache cache)
     {
-        _httpClient = httpClient;
-        _configuration = configuration;
+        _provider = provider;
+        _cache = cache;
     }
 
-    public async Task<string> GenerateInsight(string prompt)
+    public async Task<string> GenerateDashboardReport(string userId, string role, string taskJson)
     {
-        var apiKey = _configuration["AI:ApiKey"];
+        var cacheKey = $"ai-dashboard-{userId}-{role}-{DateTime.UtcNow:yyyyMMdd}";
 
-        if (string.IsNullOrWhiteSpace(apiKey))
-        {
-            return "AI key missing.";
-        }
+        if (_cache.TryGetValue(cacheKey, out string cached))
+            return cached;
 
-        // Correct Gemini endpoint (IMPORTANT: key is in query string)
-        var url =
-            
-$"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={apiKey}";
+        var prompt = AIPromptBuilder.BuildDashboardPrompt(role, taskJson);
 
-        var requestBody = new
-        {
-            contents = new[]
-            {
-                new
-                {
-                    role = "user",
-                    parts = new[]
-                    {
-                        new
-                        {
-                            text = prompt
-                        }
-                    }
-                }
-            }
-        };
+        var result = await _provider.GenerateAsync(prompt);
 
-        var json = JsonSerializer.Serialize(requestBody);
+        _cache.Set(cacheKey, result, TimeSpan.FromHours(12));
 
-        var request = new HttpRequestMessage(HttpMethod.Post, url)
-        {
-            Content = new StringContent(json, Encoding.UTF8, "application/json")
-        };
-
-        request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
-
-        var response = await _httpClient.SendAsync(request);
-
-        var responseText = await response.Content.ReadAsStringAsync();
-
-        if (!response.IsSuccessStatusCode)
-        {
-            return $"AI Error: {response.StatusCode} - {responseText}";
-        }
-
-        using var doc = JsonDocument.Parse(responseText);
-
-        // Gemini response path:
-        // candidates[0].content.parts[0].text
-        try
-        {
-            return doc.RootElement
-                .GetProperty("candidates")[0]
-                .GetProperty("content")
-                .GetProperty("parts")[0]
-                .GetProperty("text")
-                .GetString()
-                ?? "No insight generated.";
-        }
-        catch
-        {
-            return $"AI parse error: {responseText}";
-        }
+        return result;
     }
 }
