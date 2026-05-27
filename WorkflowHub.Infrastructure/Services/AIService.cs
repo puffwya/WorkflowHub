@@ -1,31 +1,61 @@
-using Microsoft.Extensions.Caching.Memory;
+using System.Net.Http.Headers;
+using System.Text;
+using System.Text.Json;
 
 namespace WorkflowHub.Infrastructure.Services;
 
 public class AIService
 {
-    private readonly IAIProvider _provider;
-    private readonly IMemoryCache _cache;
+    private readonly HttpClient _httpClient;
 
-    public AIService(IAIProvider provider, IMemoryCache cache)
+    public AIService(HttpClient httpClient)
     {
-        _provider = provider;
-        _cache = cache;
+        _httpClient = httpClient;
     }
 
-    public async Task<string> GenerateDashboardReport(string userId, string role, string taskJson)
+    public async Task<string> GenerateInsight(string prompt)
     {
-        var cacheKey = $"ai-dashboard-{userId}-{role}-{DateTime.UtcNow:yyyyMMdd}";
+        var apiKey = Environment.GetEnvironmentVariable("OPENAI_API_KEY");
 
-        if (_cache.TryGetValue(cacheKey, out string cached))
-            return cached;
+        if (string.IsNullOrWhiteSpace(apiKey))
+            return "AI key missing.";
 
-        var prompt = AIPromptBuilder.BuildDashboardPrompt(role, taskJson);
+        var requestBody = new
+        {
+            model = "gpt-4o-mini",
+            messages = new[]
+            {
+                new { role = "user", content = prompt }
+            }
+        };
 
-        var result = await _provider.GenerateAsync(prompt);
+        var request = new HttpRequestMessage(
+            HttpMethod.Post,
+            "https://api.openai.com/v1/chat/completions"
+        );
 
-        _cache.Set(cacheKey, result, TimeSpan.FromHours(12));
+        request.Headers.Authorization =
+            new AuthenticationHeaderValue("Bearer", apiKey);
 
-        return result;
+        request.Content = new StringContent(
+            JsonSerializer.Serialize(requestBody),
+            Encoding.UTF8,
+            "application/json"
+        );
+
+        var response = await _httpClient.SendAsync(request);
+        var json = await response.Content.ReadAsStringAsync();
+
+        if (!response.IsSuccessStatusCode)
+            return $"AI Error: {response.StatusCode} - {json}";
+
+        using var doc = JsonDocument.Parse(json);
+
+        return doc.RootElement
+            .GetProperty("choices")[0]
+            .GetProperty("message")
+            .GetProperty("content")
+            .GetString()
+            ?? "No response.";
     }
 }
