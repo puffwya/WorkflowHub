@@ -15,23 +15,29 @@ public class AIService
 
     public async Task<string> GenerateInsight(string prompt)
     {
-        var apiKey = Environment.GetEnvironmentVariable("AI__OpenAIKey");
+        var apiKey = Environment.GetEnvironmentVariable("GROQ_API_KEY");
 
         if (string.IsNullOrWhiteSpace(apiKey))
-            return "AI key missing.";
+            return "AI key missing (GROQ_API_KEY).";
 
         var requestBody = new
         {
-            model = "gpt-4o-mini",
+            model = "llama-3.1-8b-instant",
             messages = new[]
             {
-                new { role = "user", content = prompt }
-            }
+                new
+                {
+                    role = "user",
+                    content = prompt
+                }
+            },
+            temperature = 0.7,
+            max_tokens = 400
         };
 
         var request = new HttpRequestMessage(
             HttpMethod.Post,
-            "https://api.openai.com/v1/chat/completions"
+            "https://api.groq.com/openai/v1/chat/completions"
         );
 
         request.Headers.Authorization =
@@ -49,13 +55,20 @@ public class AIService
         if (!response.IsSuccessStatusCode)
             return $"AI Error: {response.StatusCode} - {json}";
 
-        using var doc = JsonDocument.Parse(json);
+        try
+        {
+            using var doc = JsonDocument.Parse(json);
 
-        return doc.RootElement
-            .GetProperty("choices")[0]
-            .GetProperty("message")
-            .GetProperty("content")
-            .GetString()
-            ?? "No response.";
+            return doc.RootElement
+                .GetProperty("choices")[0]
+                .GetProperty("message")
+                .GetProperty("content")
+                .GetString()
+                ?? "No response.";
+        }
+        catch
+        {
+            return $"AI parse error: {json}";
+        }
     }
 }
