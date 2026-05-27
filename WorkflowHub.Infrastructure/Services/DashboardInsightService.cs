@@ -1,24 +1,30 @@
 using Microsoft.EntityFrameworkCore;
 using WorkflowHub.Infrastructure.Data;
 using WorkflowHub.Domain.Constants;
+using WorkflowHub.Domain.Enums;
 
 namespace WorkflowHub.Infrastructure.Services;
 
 public class DashboardInsightService
 {
     private readonly AppDbContext _context;
+    private readonly AIService _aiService;
 
     public DashboardInsightService(
-        AppDbContext context)
+        AppDbContext context,
+        AIService aiService)
     {
         _context = context;
+        _aiService = aiService;
     }
 
     public async Task<string> GenerateForUser(Guid userId)
     {
         var user =
             await _context.Users
-            .FirstOrDefaultAsync(u => u.Id == userId);
+                .FirstOrDefaultAsync(
+                    u => u.Id == userId
+                );
 
         if (user == null)
         {
@@ -27,52 +33,45 @@ public class DashboardInsightService
 
         var assignedTasks =
             await _context.Tasks
-            .CountAsync(t =>
-                t.AssignedUserId == userId);
+                .Where(t => t.AssignedUserId == userId)
+                .ToListAsync();
 
-        var overdueTasks =
-            await _context.Tasks
-            .CountAsync(t =>
-                t.AssignedUserId == userId &&
-                t.DueDate < DateTime.UtcNow);
+        var todo =
+            assignedTasks.Count(
+                t => t.Status == TaskStatus.ToDo
+            );
+
+        var inProgress =
+            assignedTasks.Count(
+                t => t.Status == TaskStatus.InProgress
+            );
+
+        var review =
+            assignedTasks.Count(
+                t => t.Status == TaskStatus.Review
+            );
+
+        var done =
+            assignedTasks.Count(
+                t => t.Status == TaskStatus.Done
+            );
+
+        var overdue =
+            assignedTasks.Count(
+                t =>
+                    t.DueDate < DateTime.UtcNow &&
+                    t.Status != TaskStatus.Done
+            );
 
         var projectCount =
             await _context.ProjectUsers
-            .CountAsync(p =>
-                p.UserId == userId);
+                .CountAsync(
+                    p => p.UserId == userId
+                );
 
-        if (user.Role == Roles.Admin)
-        {
-            var totalUsers =
-                await _context.Users.CountAsync();
-
-            var totalProjects =
-                await _context.Projects.CountAsync();
-
-            return
+        var prompt =
 $"""
-# Daily Admin Report
-
-You currently oversee:
-
-• {totalUsers} users
-
-• {totalProjects} projects
-
-• {assignedTasks} assigned tasks
-
-System activity appears healthy.
-
-Suggestion:
-Review overdue work and monitor team productivity trends.
-""";
-        }
-
-        if (user.Role == Roles.Manager)
-        {
-            return
-var prompt = $"""
-User Role: {role}
+User Role: {user.Role}
 
 Assigned Projects: {projectCount}
 
@@ -81,12 +80,18 @@ Todo: {todo}
 In Progress: {inProgress}
 Review: {review}
 Done: {done}
+Overdue: {overdue}
 
 Generate a personalized dashboard report.
+
 Keep under 150 words.
+
+Be encouraging and actionable.
+
 Use markdown.
 """;
 
-return await _aiService.GenerateInsight(prompt);
+        return await _aiService
+            .GenerateInsight(prompt);
     }
 }
