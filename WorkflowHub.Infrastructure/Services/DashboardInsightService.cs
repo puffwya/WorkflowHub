@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using WorkflowHub.Infrastructure.Data;
 using WorkflowHub.Domain.Constants;
 using WorkflowHub.Domain.Enums;
+using TaskStatus = WorkflowHub.Domain.Enums.TaskStatus;
 
 namespace WorkflowHub.Infrastructure.Services;
 
