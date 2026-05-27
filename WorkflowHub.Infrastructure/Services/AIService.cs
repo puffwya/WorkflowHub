@@ -1,6 +1,7 @@
 using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
+using Microsoft.Extensions.Configuration;
 
 namespace WorkflowHub.Infrastructure.Services;
 
@@ -21,33 +22,12 @@ public class AIService
         string prompt)
     {
         var apiKey =
-            _configuration["AI:ApiKey"];
+            _configuration["OpenRouter:ApiKey"];
 
-        var requestBody = new
+        if (string.IsNullOrEmpty(apiKey))
         {
-            model = "meta-llama/llama-3.1-8b-instruct:free",
-
-            messages = new[]
-            {
-                new
-                {
-                    role = "system",
-                    content =
-                    "You are an intelligent project dashboard assistant. Create concise, useful workflow reports in markdown."
-                },
-
-                new
-                {
-                    role = "user",
-                    content = prompt
-                }
-            }
-        };
-
-        var json =
-            JsonSerializer.Serialize(
-                requestBody
-            );
+            return "AI key missing.";
+        }
 
         var request =
             new HttpRequestMessage(
@@ -61,38 +41,41 @@ public class AIService
                 apiKey
             );
 
-        request.Headers.Add(
-            "HTTP-Referer",
-            "https://workflowhub.onrender.com"
-        );
+        var body = new
+        {
+            model = "mistralai/mistral-small-3.2-24b-instruct:free",
 
-        request.Headers.Add(
-            "X-Title",
-            "WorkflowHub"
-        );
+            messages = new[]
+            {
+                new
+                {
+                    role = "user",
+                    content = prompt
+                }
+            }
+        };
 
         request.Content =
             new StringContent(
-                json,
+                JsonSerializer.Serialize(body),
                 Encoding.UTF8,
                 "application/json"
             );
 
         var response =
-            await _httpClient.SendAsync(
-                request
-            );
+            await _httpClient.SendAsync(request);
 
-        response.EnsureSuccessStatusCode();
+        if (!response.IsSuccessStatusCode)
+        {
+            return "Failed to generate AI report.";
+        }
 
-        var responseJson =
+        var json =
             await response.Content
                 .ReadAsStringAsync();
 
         using var doc =
-            JsonDocument.Parse(
-                responseJson
-            );
+            JsonDocument.Parse(json);
 
         return doc
             .RootElement
@@ -100,6 +83,6 @@ public class AIService
             .GetProperty("message")
             .GetProperty("content")
             .GetString()
-            ?? "No report generated";
+            ?? "No insight generated.";
     }
 }
