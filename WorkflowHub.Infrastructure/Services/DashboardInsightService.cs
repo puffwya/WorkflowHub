@@ -71,38 +71,22 @@ Review overdue work and monitor team productivity trends.
         if (user.Role == Roles.Manager)
         {
             return
-$"""
-# Daily Manager Report
+var prompt = $"""
+User Role: {role}
 
-You are managing:
+Assigned Projects: {projectCount}
 
-• {projectCount} projects
+Tasks:
+Todo: {todo}
+In Progress: {inProgress}
+Review: {review}
+Done: {done}
 
-• {assignedTasks} personal tasks
-
-• {overdueTasks} overdue items
-
-Suggestion:
-Check pending work requests and project progress today.
+Generate a personalized dashboard report.
+Keep under 150 words.
+Use markdown.
 """;
-        }
 
-        return
-$"""
-# Daily Employee Report
-
-You currently have:
-
-• {assignedTasks} assigned tasks
-
-• {overdueTasks} overdue tasks
-
-You belong to:
-
-• {projectCount} projects
-
-Suggestion:
-Focus on overdue work first and keep task statuses updated.
-""";
+return await _aiService.GenerateInsight(prompt);
     }
 }
