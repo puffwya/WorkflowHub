@@ -1,3 +1,4 @@
+using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
 using Microsoft.Extensions.Configuration;
@@ -17,20 +18,17 @@ public class AIService
 
     public async Task<string> GenerateInsight(string prompt)
     {
-        var apiKey = _configuration["AI:ApiKey"];
+        var apiKey = _configuration["AI:GeminiApiKey"];
 
         if (string.IsNullOrWhiteSpace(apiKey))
-        {
-            return "AI Error: Missing Gemini API key.";
-        }
+            return "AI key missing.";
+
+        var model = "gemini-1.5-flash";
 
         var url =
-            
-$"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={apiKey}";
+            $"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={apiKey}";
 
-        var request = new HttpRequestMessage(HttpMethod.Post, url);
-
-        var body = new
+        var requestBody = new
         {
             contents = new[]
             {
@@ -39,52 +37,47 @@ $"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:gener
                     role = "user",
                     parts = new[]
                     {
-                        new
-                        {
-                            text = prompt
-                        }
+                        new { text = prompt }
                     }
                 }
+            },
+            generationConfig = new
+            {
+                temperature = 0.7,
+                maxOutputTokens = 400
             }
         };
 
+        var request = new HttpRequestMessage(HttpMethod.Post, url);
         request.Content = new StringContent(
-            JsonSerializer.Serialize(body),
+            JsonSerializer.Serialize(requestBody),
             Encoding.UTF8,
             "application/json"
         );
 
+        var response = await _httpClient.SendAsync(request);
+        var json = await response.Content.ReadAsStringAsync();
+
+        if (!response.IsSuccessStatusCode)
+        {
+            return $"AI Error: {response.StatusCode} - {json}";
+        }
+
+        using var doc = JsonDocument.Parse(json);
+
         try
         {
-            var response = await _httpClient.SendAsync(request);
-            var json = await response.Content.ReadAsStringAsync();
-
-            if (!response.IsSuccessStatusCode)
-            {
-                return $"AI Error: {response.StatusCode} - {json}";
-            }
-
-            using var doc = JsonDocument.Parse(json);
-
-            if (!doc.RootElement.TryGetProperty("candidates", out var candidates))
-            {
-                return $"AI Error: Invalid response format - {json}";
-            }
-
-            var content =
-                candidates[0]
-                    .GetProperty("content")
-                    .GetProperty("parts")[0]
-                    .GetProperty("text")
-                    .GetString();
-
-            return string.IsNullOrWhiteSpace(content)
-                ? "No insight generated."
-                : content;
+            return doc.RootElement
+                .GetProperty("candidates")[0]
+                .GetProperty("content")
+                .GetProperty("parts")[0]
+                .GetProperty("text")
+                .GetString()
+                ?? "No insight generated.";
         }
-        catch (Exception ex)
+        catch
         {
-            return $"AI Exception: {ex.Message}";
+            return $"AI parse error: {json}";
         }
     }
 }
