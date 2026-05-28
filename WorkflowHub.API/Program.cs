@@ -83,8 +83,6 @@ builder.Services.AddScoped<DashboardInsightService>();
 
 builder.Services.AddHttpClient<AIService>();
 builder.Services.AddMemoryCache();
-builder.Services.AddHttpClient<OpenAIProvider>();
-builder.Services.AddScoped<IAIProvider, OpenAIProvider>();
 builder.Services.AddScoped<AIService>();
 
 // --------------------
