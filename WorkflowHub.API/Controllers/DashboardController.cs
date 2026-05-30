@@ -41,7 +41,7 @@ public class DashboardController : ControllerBase
         return Ok(result);
     }
 
-    // AI-style dashboard report (role-aware, placeholder AI)
+    // AI dashboard report (role-aware AI insight)
     [HttpGet("report")]
     public async Task<IActionResult> GetDashboardReport()
     {
